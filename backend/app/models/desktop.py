@@ -12,7 +12,7 @@ class DesktopItem(Base):
     type = Column(String(50), comment="项目类型")
     path = Column(Text, comment="项目路径")
     icon = Column(Text, comment="图标数据")
-    user_id = Column(Integer, ForeignKey("users.id"), comment="用户ID")
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), comment="用户ID")
     role = Column(String(255), comment="适用角色")
     position_x = Column(Integer, default=0, comment="X坐标")
     position_y = Column(Integer, default=0, comment="Y坐标")
@@ -32,7 +32,7 @@ class ToolboxTool(Base):
     name = Column(String(255), nullable=False, comment="工具名称")
     command = Column(Text, comment="执行命令")
     icon = Column(Text, comment="图标数据")
-    user_id = Column(Integer, ForeignKey("users.id"), comment="用户ID")
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), comment="用户ID")
     created_at = Column(TIMESTAMP, server_default=func.now(), comment="创建时间")
     
     # 关联关系
