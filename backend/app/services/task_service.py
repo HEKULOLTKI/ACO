@@ -155,6 +155,11 @@ class TaskAssignmentService:
             user = db.query(User).filter(User.id == assignment.user_id).first()
             if not user:
                 return None
+        elif assignment.username:
+            # 如果没有user_id但有username，尝试通过username查找用户
+            user = db.query(User).filter(User.username == assignment.username).first()
+            if user:
+                assignment.user_id = user.id
         
         # 创建分配
         db_assignment = TaskAssignment(
@@ -174,6 +179,13 @@ class TaskAssignmentService:
         db.add(db_assignment)
         db.commit()
         db.refresh(db_assignment)
+        
+        # 填充任务信息
+        if task:
+            db_assignment.task_name = task.name
+            db_assignment.task_type = task.type
+            db_assignment.task_phase = task.phase
+        
         return db_assignment
     
     @staticmethod

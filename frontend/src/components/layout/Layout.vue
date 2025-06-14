@@ -98,46 +98,32 @@
           <span class="nav-text">用户管理</span>
         </div>
         
-        <!-- 任务管理模块 -->
-        <div class="nav-group">
-          <div 
-            class="nav-item nav-parent" 
-            :class="{ active: isTaskMenuActive, expanded: taskMenuExpanded }" 
-            @click="toggleTaskMenu"
-          >
-            <img src="@/assets/icon/任务.png" alt="任务管理" class="nav-icon-img" />
-            <span class="nav-text">任务管理</span>
-            <el-icon class="expand-icon" :class="{ rotated: taskMenuExpanded }">
-              <ArrowRight />
-            </el-icon>
-          </div>
-          
-          <div class="nav-submenu" v-show="taskMenuExpanded">
-            <div 
-              class="nav-item nav-child" 
-              :class="{ active: $route.path === '/tasks' }" 
-              @click="$router.push('/tasks')"
-            >
-              <span class="nav-text">任务管理</span>
-            </div>
-            
-            <div 
-              class="nav-item nav-child" 
-              :class="{ active: $route.path === '/task-assignment' }" 
-              @click="$router.push('/task-assignment')"
-              v-if="userStore.isAdmin"
-            >
-              <span class="nav-text">任务下发</span>
-            </div>
-            
-            <div 
-              class="nav-item nav-child" 
-              :class="{ active: $route.path === '/task-progress' }" 
-              @click="$router.push('/task-progress')"
-            >
-              <span class="nav-text">任务进度</span>
-            </div>
-          </div>
+        <div 
+          class="nav-item" 
+          :class="{ active: $route.path === '/tasks' }" 
+          @click="$router.push('/tasks')"
+        >
+          <img src="@/assets/icon/任务.png" alt="任务管理" class="nav-icon-img" />
+          <span class="nav-text">任务管理</span>
+        </div>
+        
+        <div 
+          class="nav-item" 
+          :class="{ active: $route.path === '/task-assignment' }" 
+          @click="$router.push('/task-assignment')"
+          v-if="userStore.isAdmin"
+        >
+          <img src="@/assets/icon/任务.png" alt="任务下发" class="nav-icon-img" />
+          <span class="nav-text">任务下发</span>
+        </div>
+        
+        <div 
+          class="nav-item" 
+          :class="{ active: $route.path === '/task-progress' }" 
+          @click="$router.push('/task-progress')"
+        >
+          <img src="@/assets/icon/任务.png" alt="任务进度" class="nav-icon-img" />
+          <span class="nav-text">任务进度</span>
         </div>
         
         <div class="nav-item" :class="{ active: $route.path === '/devices' }" @click="$router.push('/devices')">
@@ -172,10 +158,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, ArrowRight } from '@element-plus/icons-vue'
+import { Search } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/modules/auth'
 
 const router = useRouter()
@@ -185,26 +171,9 @@ const userStore = useAuthStore()
 // 响应式数据
 const searchValue = ref('')
 const notificationCount = ref(5)
-const taskMenuExpanded = ref(false)
-
-// 计算属性
-const isTaskMenuActive = computed(() => {
-  return ['/tasks', '/task-assignment', '/task-progress'].includes(route.path)
-})
-
-// 监听路由变化，自动展开相关菜单
-watch(() => route.path, (newPath: string) => {
-  if (['/tasks', '/task-assignment', '/task-progress'].includes(newPath)) {
-    taskMenuExpanded.value = true
-  }
-}, { immediate: true })
 
 const goToProfile = () => {
   router.push('/profile')
-}
-
-const toggleTaskMenu = () => {
-  taskMenuExpanded.value = !taskMenuExpanded.value
 }
 
 const handleLogout = async () => {

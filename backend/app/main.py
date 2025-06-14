@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import create_tables
-from app.api import auth, user, task
+from app.api import auth, user, task, device
 
 # 创建FastAPI应用实例
 app = FastAPI(
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
 app.include_router(user.router, prefix="/api", tags=["用户管理"])
 app.include_router(task.router, prefix="/api", tags=["任务管理"])
+app.include_router(device.router, prefix="/api", tags=["设备管理"])
 
 @app.on_event("startup")
 async def startup_event():

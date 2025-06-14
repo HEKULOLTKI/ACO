@@ -118,19 +118,11 @@
               <el-button 
                 type="primary" 
                 circle 
-                size="small"
                 :disabled="checkedAvailableUsers.length === 0"
                 @click="addSelectedUsers"
+                class="transfer-btn"
               >
                 <el-icon><ArrowRight /></el-icon>
-              </el-button>
-              <el-button 
-                circle 
-                size="small"
-                :disabled="checkedSelectedUsers.length === 0"
-                @click="removeSelectedUsers"
-              >
-                <el-icon><ArrowLeft /></el-icon>
               </el-button>
             </div>
 
@@ -145,10 +137,11 @@
                   v-for="user in selectedUsers" 
                   :key="user.username"
                   class="user-item selected"
-                  @click="toggleUser(user, 'selected')"
+                  @click="removeUser(user)"
+                  title="点击移除用户"
                 >
-                  <el-checkbox :model-value="checkedSelectedUsers.includes(user.username)" />
                   <span>{{ user.username }}</span>
+                  <el-icon class="remove-icon"><Close /></el-icon>
                 </div>
                 <div v-if="selectedUsers.length === 0" class="empty-state">
                   已分配执行人 (0 项)
@@ -178,7 +171,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Check, ArrowRight, ArrowLeft, Document, InfoFilled } from '@element-plus/icons-vue'
+import { Check, ArrowRight, ArrowLeft, Document, InfoFilled, Close } from '@element-plus/icons-vue'
 import { getTasks, createTaskAssignment } from '@/api/task'
 import { getUserList } from '@/api/user'
 import type { Task } from '@/types/task'
@@ -228,9 +221,13 @@ const loadAvailableTasks = async () => {
   loading.value = true
   try {
     const response = await getTasks()
-    availableTasks.value = response.data?.filter(task => task.status !== '已完成') || []
-  } catch (error) {
-    ElMessage.error('加载可用任务失败')
+    // 过滤掉已完成的任务，只显示可分配的任务
+    availableTasks.value = response.data?.filter(task => 
+      task.status !== '已完成' && task.status !== '已取消'
+    ) || []
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.detail || error?.message || '加载可用任务失败'
+    ElMessage.error(errorMsg)
     console.error('加载任务失败:', error)
   } finally {
     loading.value = false
@@ -293,6 +290,13 @@ const removeSelectedUsers = () => {
   checkedSelectedUsers.value = []
 }
 
+const removeUser = (user: User) => {
+  const index = selectedUsers.value.findIndex(u => u.username === user.username)
+  if (index > -1) {
+    selectedUsers.value.splice(index, 1)
+  }
+}
+
 const handleAssignTasks = async () => {
   if (!selectedTask.value) {
     ElMessage.warning('请选择要分配的任务')
@@ -319,6 +323,7 @@ const handleAssignTasks = async () => {
     for (const user of selectedUsers.value) {
       await createTaskAssignment({
         task_id: selectedTask.value.id,
+        user_id: user.id,
         username: user.username,
         status: '进行中',
         progress: 0,
@@ -327,15 +332,18 @@ const handleAssignTasks = async () => {
       })
     }
 
-    ElMessage.success('任务分配成功')
+    ElMessage.success(`成功为 ${selectedUsers.value.length} 个用户分配任务`)
+    // 清空选择状态
     selectedTask.value = null
     selectedUsers.value = []
     checkedAvailableUsers.value = []
     checkedSelectedUsers.value = []
-    loadAvailableTasks()
+    // 重新加载任务列表以更新状态
+    await loadAvailableTasks()
   } catch (error: any) {
     if (error?.message !== 'cancel') {
-      ElMessage.error('任务分配失败')
+      const errorMsg = error?.response?.data?.detail || error?.message || '任务分配失败'
+      ElMessage.error(errorMsg)
       console.error('分配任务失败:', error)
     }
   }
@@ -491,6 +499,7 @@ onMounted(() => {
 
         .user-selection {
           display: flex;
+          align-items: flex-start;
           gap: 10px;
           height: 460px;
 
@@ -546,6 +555,25 @@ onMounted(() => {
                 &.selected {
                   background: #e6f7ff;
                   border-color: #91d5ff;
+                  justify-content: space-between;
+                  
+                  &:hover {
+                    background: #fff2f0;
+                    
+                    .remove-icon {
+                      color: #ff4d4f;
+                    }
+                  }
+                  
+                  .remove-icon {
+                    color: #d9d9d9;
+                    font-size: 12px;
+                    transition: color 0.2s ease;
+                    
+                    &:hover {
+                      color: #ff4d4f;
+                    }
+                  }
                 }
 
                 &:last-child {
@@ -571,8 +599,29 @@ onMounted(() => {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 8px;
-            width: 36px;
+            width: 50px;
+            margin-top: 33px;
+            height: 420px;
+            padding: 0;
+            
+            .transfer-btn {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              
+              .el-icon {
+                font-size: 16px;
+                font-weight: bold;
+              }
+              
+              &:hover:not(:disabled) {
+                transform: scale(1.1);
+                transition: transform 0.2s ease;
+              }
+            }
           }
         }
       }
@@ -616,5 +665,42 @@ onMounted(() => {
 
 :deep(.el-table .el-table__body td) {
   padding: 6px 0;
+}
+
+:deep(.transfer-btn.el-button--primary) {
+  background-color: #409eff;
+  border-color: #409eff;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background-color: #66b1ff;
+    border-color: #66b1ff;
+  }
+  
+  &:disabled {
+    background-color: #a0cfff;
+    border-color: #a0cfff;
+    color: white;
+    cursor: not-allowed;
+  }
+}
+
+:deep(.transfer-btn.el-button) {
+  background-color: white;
+  border-color: #dcdfe6;
+  color: #606266;
+  
+  &:hover:not(:disabled) {
+    background-color: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+  
+  &:disabled {
+    background-color: #f5f7fa;
+    border-color: #e4e7ed;
+    color: #c0c4cc;
+    cursor: not-allowed;
+  }
 }
 </style> 

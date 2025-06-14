@@ -189,7 +189,7 @@
             :auto-upload="false"
             :show-file-list="false"
             :before-upload="beforeUpload"
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xls,.csv"
             @change="handleFileChange"
           >
             <div class="upload-content">
@@ -197,7 +197,7 @@
               <div class="upload-text">
                 <div class="main-text">添加文件</div>
                 <div class="sub-text">
-                  请选择要导入的Excel文件，支持xls、xlsx格式
+                  请选择要导入的Excel或CSV文件，支持.xls、.xlsx、.csv格式
                 </div>
               </div>
             </div>
@@ -224,7 +224,7 @@
         </div>
         
         <div class="template-tips">
-          <p>下载标准的用户导入Excel模板，包含用户名、密码、角色、用户类型、状态等字段。</p>
+          <p>下载标准的用户导入模板，包含用户名、密码、角色、用户类型、状态等字段。请使用下载的模板格式填写用户信息。支持Excel(.xlsx)和CSV(.csv)格式。</p>
         </div>
       </div>
       
@@ -290,7 +290,7 @@ import {
 } from '@element-plus/icons-vue'
 import { 
   getUserList, createUser, updateUser, deleteUser, 
-  bulkImportUsers 
+  bulkImportUsers, downloadUserTemplate 
 } from '@/api/user'
 import type { UserForm, UserUpdate, BulkImportResult } from '@/types/user'
 
@@ -534,31 +534,17 @@ const handleBulkImport = () => {
 const downloadTemplate = async () => {
   downloadLoading.value = true
   try {
-    // 创建CSV内容，包含标题行和示例数据
-    const csvData = [
-      ['用户名', '密码', '角色', '类型', '状态'],
-      ['zhang_san', '123456', '网络工程师', '操作员', 'active'],
-      ['li_si', '123456', '系统架构师', '管理员', 'active'],
-      ['wang_wu', '123456', '系统规划与管理师', '操作员', 'inactive'],
-      ['zhao_liu', '123456', '系统分析师', '操作员', 'active']
-    ]
-    
-    // 将数组转换为CSV格式字符串
-    const csvContent = csvData.map(row => 
-      row.map(field => `"${field.replace(/"/g, '""')}"`).join(',')
-    ).join('\n')
-    
-    // 添加BOM头，确保中文正确显示
-    const BOM = '\uFEFF'
-    const blob = new Blob([BOM + csvContent], { 
-      type: 'text/csv;charset=utf-8;' 
-    })
+    // 使用API下载模板
+    const response = await downloadUserTemplate()
     
     // 创建下载链接
+    const blob = new Blob([response.data], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = '用户导入模板.csv'
+    link.download = '用户导入模板.xlsx'
     link.style.display = 'none'
     
     // 添加到页面并触发下载
@@ -572,35 +558,87 @@ const downloadTemplate = async () => {
     ElMessage.success('模板下载成功')
   } catch (error) {
     console.error('下载模板失败:', error)
-    ElMessage.error('下载模板失败')
+    
+    // 如果API不可用，使用本地生成的备选方案
+    try {
+      // 创建Excel工作簿数据 - 列名必须与后端期望的完全一致
+      const excelData = [
+        ['用户名', '密码', '角色', '用户类型', '状态'],
+        ['zhang_san', '123456', '网络工程师', '操作员', 'active'],
+        ['li_si', '123456', '系统架构师', '管理员', 'active'],
+        ['wang_wu', '123456', '系统规划与管理师', '操作员', 'inactive'],
+        ['zhao_liu', '123456', '系统分析师', '操作员', 'active']
+      ]
+      
+      // 创建CSV格式内容（作为备选方案）
+      const csvContent = excelData.map(row => 
+        row.map(field => `"${field.replace(/"/g, '""')}"`).join(',')
+      ).join('\n')
+      
+      // 创建Blob对象，使用CSV格式
+      const blob = new Blob(['\ufeff' + csvContent], { 
+        type: 'text/csv;charset=utf-8' 
+      })
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = '用户导入模板.csv'
+      link.style.display = 'none'
+      
+      // 添加到页面并触发下载
+      document.body.appendChild(link)
+      link.click()
+      
+      // 清理
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      ElMessage.success('CSV模板下载成功（备选方案）')
+    } catch (fallbackError) {
+      console.error('备选方案也失败:', fallbackError)
+      ElMessage.error('下载模板失败，请联系管理员')
+    }
   } finally {
     downloadLoading.value = false
   }
 }
 
 const beforeUpload = (file: File) => {
-  const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-                  file.type === 'application/vnd.ms-excel'
-  if (!isExcel) {
-    ElMessage.error('只能上传Excel文件!')
+  // 检查文件类型
+  const isValidFile = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                      file.type === 'application/vnd.ms-excel' ||
+                      file.type === 'text/csv' ||
+                      file.name.endsWith('.xlsx') ||
+                      file.name.endsWith('.xls') ||
+                      file.name.endsWith('.csv')
+  
+  if (!isValidFile) {
+    ElMessage.error('只能上传Excel或CSV文件(.xlsx, .xls, .csv)!')
     return false
   }
+  
+  // 检查文件大小
   const isLt10M = file.size / 1024 / 1024 < 10
   if (!isLt10M) {
     ElMessage.error('文件大小不能超过10MB!')
     return false
   }
+  
   return false // 阻止自动上传
 }
 
 const handleFileChange = (file: UploadFile) => {
   if (file.raw) {
     selectedFile.value = file.raw
+    ElMessage.success(`已选择文件: ${file.name}`)
   }
 }
 
 const clearFile = () => {
   selectedFile.value = null
+  ElMessage.info('已清除文件选择')
 }
 
 const handleImport = async () => {
@@ -609,17 +647,79 @@ const handleImport = async () => {
     return
   }
   
+  // 再次验证文件类型
+  const isValidFile = selectedFile.value.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                      selectedFile.value.type === 'application/vnd.ms-excel' ||
+                      selectedFile.value.type === 'text/csv' ||
+                      selectedFile.value.name.endsWith('.xlsx') ||
+                      selectedFile.value.name.endsWith('.xls') ||
+                      selectedFile.value.name.endsWith('.csv')
+  
+  if (!isValidFile) {
+    ElMessage.error('请选择正确的Excel或CSV文件格式')
+    return
+  }
+  
+  // 验证文件大小
+  if (selectedFile.value.size > 10 * 1024 * 1024) {
+    ElMessage.error('文件大小不能超过10MB')
+    return
+  }
+  
+  console.log('开始导入文件:', {
+    name: selectedFile.value.name,
+    size: selectedFile.value.size,
+    type: selectedFile.value.type
+  })
+  
   importLoading.value = true
   try {
     const response = await bulkImportUsers(selectedFile.value)
-    Object.assign(importResult, response.data)
-    bulkImportVisible.value = false
-    resultVisible.value = true
-    loadUsers() // 刷新用户列表
+    
+    // 处理导入结果
+    if (response.data) {
+      Object.assign(importResult, response.data)
+      bulkImportVisible.value = false
+      resultVisible.value = true
+      
+      // 显示导入成功消息
+      if (importResult.success_count > 0) {
+        ElMessage.success(`成功导入 ${importResult.success_count} 个用户`)
+      }
+      
+      // 刷新用户列表
+      await loadUsers()
+    } else {
+      ElMessage.error('导入失败：响应数据格式错误')
+    }
   } catch (error: any) {
     console.error('批量导入失败:', error)
-    const message = error?.response?.data?.detail || '批量导入失败'
-    ElMessage.error(message)
+    console.error('错误详情:', {
+      response: error?.response,
+      message: error?.message,
+      status: error?.response?.status
+    })
+    
+    // 更详细的错误处理
+    let errorMessage = '批量导入失败'
+    if (error?.response?.data?.detail) {
+      errorMessage = error.response.data.detail
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message
+    } else if (error?.message) {
+      errorMessage = error.message
+    }
+    
+    ElMessage.error(errorMessage)
+    
+    // 根据不同的错误类型给出不同的建议
+    if (errorMessage.includes('zip') || errorMessage.includes('格式错误')) {
+      ElMessage.info('建议：请重新下载模板，确保使用最新的Excel模板格式')
+    } else if (errorMessage.includes('缺少必要列')) {
+      ElMessage.info('建议：请检查Excel表头是否包含：用户名、密码、角色、用户类型、状态')
+    } else if (errorMessage.includes('数据行都无效')) {
+      ElMessage.info('建议：请检查数据行是否填写完整，不能有空白字段')
+    }
   } finally {
     importLoading.value = false
   }
