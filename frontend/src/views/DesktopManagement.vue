@@ -2,7 +2,7 @@
   <div class="desktop-management">
     <!-- 页面标题 -->
     <div class="page-header">
-      <h1 class="page-title">协作运维平台云桌面管理</h1>
+      <h1 class="page-title">📋 模板 | 任务下发列表</h1>
     </div>
 
     <!-- 筛选条件栏 -->
@@ -35,9 +35,10 @@
         <div class="filter-item">
           <span class="filter-label">{{ filteredImageList.length }}个模板：</span>
           <div class="image-stats">
-            <span class="stat-item stat-blue">🔵 {{ getStatusCount('running') }}个</span>
-            <span class="stat-item stat-black">⚫ {{ getStatusCount('stopped') }}个</span>
-            <span class="stat-item stat-red">🔴 {{ getStatusCount('error') }}个</span>
+            <!-- 图片 -->
+            <span class="stat-item stat-blue"> <img src="@/assets/icon/组 3695.png" alt="running" class="stat-icon"> {{ getStatusCount('running') }}个</span>
+            <span class="stat-item stat-black"> <img src="@/assets/icon/组 3695 (2).png" alt="stopped" class="stat-icon"> {{ getStatusCount('stopped') }}个</span>
+            <span class="stat-item stat-red"> <img src="@/assets/icon/组 3695 (1).png" alt="error" class="stat-icon"> {{ getStatusCount('error') }}个</span>
           </div>
         </div>
 
@@ -54,7 +55,7 @@
         <!-- 内置充值使模块 -->
         <div class="filter-item">
           <el-radio-group v-model="chargeModule" class="charge-module" @change="handleChargeModuleChange">
-            <el-radio :label="true" size="small">🔵 内置充值使模块</el-radio>
+            <el-radio :label="true" size="small">内置充值使模块</el-radio>
           </el-radio-group>
         </div>
 
@@ -87,7 +88,7 @@
         <div class="search-box">
           <el-input
             v-model="searchKeyword"
-            placeholder="搜索角色名称或系统类型"
+            placeholder="搜索"
             class="search-input"
             :prefix-icon="Search"
             @input="handleSearch"
@@ -100,8 +101,8 @@
         <!-- 操作按钮 -->
         <el-button type="primary" :icon="Plus" class="action-btn" @click="handleAdd">新增</el-button>
         <el-button type="info" :icon="Edit" class="action-btn" @click="handleEdit" :disabled="selectedItems.length === 0">编辑</el-button>
-        <el-button type="warning" class="action-btn" @click="handlePowerOperation" :disabled="selectedItems.length === 0">
-          {{ getPowerButtonText() }}
+        <el-button type="warning" class="action-btn shutdown-btn" @click="handlePowerOperation" :disabled="selectedItems.length === 0">
+          关机
         </el-button>
         <el-button type="success" class="action-btn register-btn" @click="handleRegister">📋 注册模板</el-button>
         <el-button type="danger" class="action-btn delete-btn" @click="handleDelete" :disabled="selectedItems.length === 0">🗑️ 删除模板</el-button>
@@ -111,30 +112,19 @@
     <!-- 模板卡片网格 -->
     <div class="image-grid">
       <div v-for="(image, index) in filteredImageList" :key="index" 
-           class="image-card" 
-           :class="{ 
-             'selected': selectedItems.includes(index),
-             'enabled': image.isEnabled,
-             'disabled': !image.isEnabled
-           }">
-        <!-- 选择checkbox -->
-        <div class="card-checkbox">
-          <el-checkbox v-model="selectedItems" :label="index" @change="handleSelectItem"></el-checkbox>
-        </div>
-
+           class="image-card">
         <!-- 卡片头部 -->
         <div class="card-header">
           <div class="card-title">
-            <span class="title-icon">👤</span>
+            <span class="title-icon">🌐</span>
             <span class="title-text">{{ image.name }}</span>
-            <span class="system-badge">{{ image.systemDisplayName }}</span>
           </div>
           <div class="card-actions">
-            <el-button type="primary" size="small" :icon="Edit" @click="handleEditSingle(index)">编辑</el-button>
-            <el-button type="info" size="small" :icon="DocumentCopy" @click="handleCopy(index)">复制</el-button>
-            <el-button type="success" size="small" :icon="Download" @click="handleDownload(index)">下载</el-button>
+            <el-button type="text" size="small" class="action-link" @click="handleEditSingle(index)">编辑</el-button>
+            <el-button type="text" size="small" class="action-link" @click="handleCopy(index)">复制</el-button>
+            <el-button type="text" size="small" class="action-link" @click="handleDownload(index)">下载</el-button>
             <el-dropdown trigger="click">
-              <el-button type="info" size="small" :icon="MoreFilled">更多</el-button>
+              <el-button type="text" size="small" class="action-link">更多</el-button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="handleViewDetails(index)">查看详情</el-dropdown-item>
@@ -148,36 +138,45 @@
 
         <!-- 卡片内容 -->
         <div class="card-content">
-          <!-- 左侧系统信息 -->
-          <div class="system-info">
-            <div class="system-icon">
-              <div class="os-logo" :class="getOSLogoClass(image.system)">
-                <span v-if="image.system.includes('windows')">⊞</span>
-                <span v-else>🐧</span>
+          <!-- 左侧系统图标 -->
+          <div class="system-icon-section">
+            <div class="windows-icon">
+              <div class="windows-logo">
+                <div class="logo-squares">
+                  <div class="square square-1"></div>
+                  <div class="square square-2"></div>
+                  <div class="square square-3"></div>
+                  <div class="square square-4"></div>
+                </div>
               </div>
+              <div class="system-text">{{ getOSDisplayName(image.system) }} {{ getOSArch(image.system) }}</div>
             </div>
-            <div class="system-details">
-              <div class="os-name">{{ getOSDisplayName(image.system) }}</div>
-              <div class="os-arch">{{ getOSArch(image.system) }}</div>
+            <div class="computer-icon-wrapper" :class="getComputerIconClass(image.status)">
+              <div class="computer-icon">💻</div>
+              <div class="status-indicator" v-if="image.status !== 'running'">
+                <span v-if="image.status === 'stopped'" class="status-text">关机</span>
+                <span v-if="image.status === 'error'" class="status-text">错误</span>
+              </div>
+              <div class="status-dot" :class="'status-' + image.status"></div>
             </div>
           </div>
           
           <!-- 右侧详细信息 -->
           <div class="detail-info">
             <div class="info-row">
-              <span class="info-label">系统盘</span>
+              <span class="info-label">系统盘：</span>
               <span class="info-value">{{ image.systemDiskUsage }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">数据盘</span>
+              <span class="info-label">数据盘：</span>
               <span class="info-value">{{ image.dataDiskUsage }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">创建时间</span>
+              <span class="info-label">创建时间：</span>
               <span class="info-value">{{ image.createTime }}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">更新时间</span>
+              <span class="info-label">更新时间：</span>
               <span class="info-value">{{ image.updateTime }}</span>
             </div>
           </div>
@@ -317,6 +316,20 @@ const imageList = reactive([
     topic: 'office',
     management: 'admin',
     imageGroup: 'linux'
+  },
+  {
+    name: '数据库管理员',
+    system: 'windows10 64bit',
+    systemDisplayName: 'Windows 10',
+    systemDiskUsage: '18.5GB/120.0GB',
+    dataDiskUsage: '12.3GB/50.0GB',
+    createTime: '2024-01-23 08:15:32',
+    updateTime: '2024-01-29 14:45:18',
+    isEnabled: false,
+    status: 'error',
+    topic: 'office',
+    management: 'admin',
+    imageGroup: 'windows'
   }
 ])
 
@@ -514,6 +527,20 @@ const getOSLogoClass = (system) => {
   if (system.includes('windows')) return 'windows-logo'
   return 'linux-logo'
 }
+
+// 获取电脑图标样式
+const getComputerIconClass = (status) => {
+  switch (status) {
+    case 'running':
+      return 'computer-running'  // 蓝色，表示开机
+    case 'stopped':
+      return 'computer-stopped'  // 黑色，表示未开机
+    case 'error':
+      return 'computer-error'    // 红色，表示错误
+    default:
+      return 'computer-stopped'
+  }
+}
 </script>
 
 <style scoped>
@@ -529,8 +556,8 @@ const getOSLogoClass = (system) => {
 }
 
 .page-title {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 600;
   color: #333;
   margin: 0;
 }
@@ -541,7 +568,8 @@ const getOSLogoClass = (system) => {
   padding: 16px 20px;
   border-radius: 8px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8e8e8;
 }
 
 .filter-group {
@@ -594,13 +622,21 @@ const getOSLogoClass = (system) => {
   margin: 0;
 }
 
+.stat-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
 /* 操作栏 */
 .operation-bar {
   background: white;
   padding: 16px 20px;
   border-radius: 8px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8e8e8;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -636,6 +672,17 @@ const getOSLogoClass = (system) => {
   font-weight: 500;
 }
 
+.shutdown-btn {
+  background: #faad14;
+  border-color: #faad14;
+  color: white;
+}
+
+.shutdown-btn:hover {
+  background: #ffc53d;
+  border-color: #ffc53d;
+}
+
 .register-btn {
   background: #52c41a;
   border-color: #52c41a;
@@ -664,39 +711,23 @@ const getOSLogoClass = (system) => {
 }
 
 .image-card {
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8e8e8;
   overflow: hidden;
-  transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
-  color: white;
+  transition: all 0.3s ease;
   position: relative;
 }
 
-.image-card.enabled {
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 50%, #1e5f99 100%);
-}
-
-.image-card.disabled {
-  background: linear-gradient(135deg, #8c8c8c 0%, #666666 50%, #404040 100%);
-  opacity: 0.7;
-}
-
 .image-card:hover {
-  transform: translateY(-4px);
-}
-
-.image-card.enabled:hover {
-  box-shadow: 0 12px 35px rgba(74, 144, 226, 0.4);
-}
-
-.image-card.disabled:hover {
-  box-shadow: 0 12px 35px rgba(140, 140, 140, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* 卡片头部 */
 .card-header {
   padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid #f0f0f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -710,21 +741,13 @@ const getOSLogoClass = (system) => {
 
 .title-icon {
   font-size: 18px;
+  color: #1890ff;
 }
 
 .title-text {
   font-size: 16px;
   font-weight: 600;
-  color: white;
-}
-
-.system-badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  backdrop-filter: blur(10px);
+  color: #333;
 }
 
 .card-actions {
@@ -732,78 +755,167 @@ const getOSLogoClass = (system) => {
   gap: 8px;
 }
 
-.card-actions .el-button {
-  height: 28px;
-  padding: 4px 12px;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  backdrop-filter: blur(10px);
+.action-link {
+  color: #1890ff;
+  font-size: 14px;
+  padding: 4px 8px;
 }
 
-.card-actions .el-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+.action-link:hover {
+  background: #f0f9ff;
+  color: #0050b3;
 }
 
 /* 卡片内容 */
 .card-content {
-  padding: 20px;
+  padding: 0 20px 20px 20px;
   display: flex;
-  gap: 24px;
+  gap: 20px;
   align-items: flex-start;
 }
 
-/* 左侧系统信息 */
-.system-info {
+/* 左侧系统图标 */
+.system-icon-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  min-width: 120px;
+  gap: 16px;
+  min-width: 140px;
+  padding: 10px;
 }
 
-.system-icon {
+.windows-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   position: relative;
 }
 
-.os-logo {
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
+.windows-logo {
+  width: 90px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
-  font-weight: bold;
-  backdrop-filter: blur(20px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  background: #f9f9f9;
+  position: relative;
 }
 
-.windows-logo {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
+.logo-squares {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3px;
+  width: 32px;
+  height: 32px;
 }
 
-.linux-logo {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffd700;
+.square {
+  background: #0078d4;
+  border-radius: 2px;
 }
 
-.system-details {
+.square-1 {
+  background: #0078d4;
+}
+
+.square-2 {
+  background: #0078d4;
+}
+
+.square-3 {
+  background: #0078d4;
+}
+
+.square-4 {
+  background: #0078d4;
+}
+
+.system-text {
+  font-size: 13px;
+  color: #1890ff;
   text-align: center;
+  font-weight: 500;
 }
 
-.os-name {
-  font-size: 14px;
-  font-weight: 600;
+.computer-icon-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.computer-icon {
+  font-size: 40px;
+  transition: all 0.3s ease;
+}
+
+.computer-running .computer-icon {
+  color: #1890ff;  /* 蓝色 - 开机状态 */
+  filter: none;
+}
+
+.computer-stopped .computer-icon {
+  color: #666;     /* 灰色 - 未开机状态 */
+  filter: grayscale(100%);
+  opacity: 0.7;
+}
+
+.computer-error .computer-icon {
+  color: #ff4d4f;  /* 红色 - 错误状态 */
+  animation: shake 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(2px); }
+}
+
+.status-indicator {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: rgba(0, 0, 0, 0.8);
   color: white;
-  margin-bottom: 2px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
-.os-arch {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+.status-text {
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: -2px;
+  right: 8px;
+  border: 1px solid white;
+}
+
+.status-running {
+  background-color: #52c41a; /* 绿色点 - 运行中 */
+}
+
+.status-stopped {
+  background-color: #666; /* 灰色点 - 已停止 */
+}
+
+.status-error {
+  background-color: #ff4d4f; /* 红色点 - 错误 */
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
 }
 
 /* 右侧详细信息 */
@@ -812,14 +924,15 @@ const getOSLogoClass = (system) => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-top: 10px;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+  margin: 0;
 }
 
 .info-row:last-child {
@@ -828,15 +941,23 @@ const getOSLogoClass = (system) => {
 
 .info-label {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
+  color: #666;
+  font-weight: 400;
+  min-width: 80px;
 }
 
 .info-value {
   font-size: 14px;
-  color: white;
-  font-weight: 600;
+  color: #1890ff;
+  font-weight: 400;
   text-align: right;
+  flex: 1;
+}
+
+/* 操作按钮样式更新 */
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 响应式设计 */
@@ -863,55 +984,8 @@ const getOSLogoClass = (system) => {
     justify-content: center;
   }
   
-  .content-row {
+  .image-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* 选择框样式 */
-.card-checkbox {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 4px;
-  padding: 4px;
-}
-
-.image-card.selected {
-  border: 2px solid #1890ff;
-  box-shadow: 0 0 15px rgba(24, 144, 255, 0.5);
-}
-
-/* 操作按钮样式更新 */
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.action-btn {
-  height: 36px;
-  font-weight: 500;
-}
-
-.register-btn {
-  background: #52c41a;
-  border-color: #52c41a;
-}
-
-.register-btn:hover {
-  background: #73d13d;
-  border-color: #73d13d;
-}
-
-.delete-btn {
-  background: #ff4d4f;
-  border-color: #ff4d4f;
-}
-
-.delete-btn:hover {
-  background: #ff7875;
-  border-color: #ff7875;
 }
 </style>
