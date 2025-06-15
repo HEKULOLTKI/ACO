@@ -29,9 +29,10 @@
           </el-form-item>
           <el-form-item label="任务类型">
             <el-select v-model="searchForm.type" placeholder="选择任务类型" clearable>
-              <el-option label="运维监控任务" value="运维监控任务" />
-              <el-option label="运维管理任务" value="运维管理任务" />
-              <el-option label="开发测试任务" value="开发测试任务" />
+              <el-option label="网络搭建任务" value="网络搭建任务" />
+              <el-option label="系统构建任务" value="系统构建任务" />
+              <el-option label="运维监管任务" value="运维监管任务" />
+              <el-option label="日志安全任务" value="日志安全任务" />
             </el-select>
           </el-form-item>
           <el-form-item label="阶段">
@@ -116,9 +117,10 @@
         </el-form-item>
         <el-form-item label="任务类型" prop="type">
           <el-select v-model="taskForm.type" placeholder="选择任务类型">
-            <el-option label="运维监控任务" value="运维监控任务" />
-            <el-option label="运维管理任务" value="运维管理任务" />
-            <el-option label="开发测试任务" value="开发测试任务" />
+            <el-option label="网络搭建任务" value="网络搭建任务" />
+            <el-option label="系统构建任务" value="系统构建任务" />
+            <el-option label="运维监管任务" value="运维监管任务" />
+            <el-option label="日志安全任务" value="日志安全任务" />
           </el-select>
         </el-form-item>
         <el-form-item label="阶段" prop="phase">
@@ -274,7 +276,7 @@ import {
   Plus, Search, Upload, Download, Document, Delete, 
   SuccessFilled, CircleCloseFilled 
 } from '@element-plus/icons-vue'
-import { getTasks, getTasksCount, createTask, updateTask, deleteTask, getTask } from '@/api/task'
+import { getTasks, getTasksCount, createTask, updateTask, deleteTask, getTask, bulkImportTasks, type TaskBulkImportResult } from '@/api/task'
 
 interface Task {
   id: number
@@ -319,7 +321,7 @@ const pagination = reactive({
 
 const tasks = ref<Task[]>([])
 
-const importResult = reactive({
+const importResult = reactive<TaskBulkImportResult>({
   success_count: 0,
   fail_count: 0,
   failed_tasks: [],
@@ -352,26 +354,8 @@ const loadTasks = async () => {
       task_type: searchForm.type || undefined
     })
     
-    // 为每个任务获取分配信息
-    const tasksWithAssignments = await Promise.all(
-      (response.data || []).map(async (task) => {
-        try {
-          const taskDetail = await getTask(task.id)
-          return {
-            ...task,
-            assignments: taskDetail.data?.assignments || []
-          }
-        } catch (error) {
-          console.warn(`获取任务 ${task.id} 分配信息失败:`, error)
-          return {
-            ...task,
-            assignments: []
-          }
-        }
-      })
-    )
-    
-    tasks.value = tasksWithAssignments
+    // 直接使用任务数据，不获取分配信息
+    tasks.value = response.data || []
     
     // 获取总数
     const countResponse = await getTasksCount({
@@ -497,10 +481,10 @@ const downloadTemplate = async () => {
     // 创建CSV内容，包含标题行和示例数据
     const csvData = [
       ['任务名称', '任务类型', '阶段', '任务描述'],
-      ['网络设备维护', '运维监控任务', '计划阶段', '检查网络设备运行状态'],
-      ['系统更新', '运维管理任务', '执行阶段', '更新系统软件和补丁'],
-      ['数据备份', '运维管理任务', '执行阶段', '定期备份重要数据'],
-      ['性能监控', '运维监控任务', '执行阶段', '监控系统性能指标']
+              ['网络架构设计', '网络搭建任务', '计划阶段', '设计企业网络拓扑结构和配置方案'],
+        ['服务器环境搭建', '系统构建任务', '执行阶段', '搭建生产环境服务器和应用系统'],
+        ['监控系统配置', '运维监管任务', '配置阶段', '配置系统监控和告警机制'],
+        ['日志安全审计', '日志安全任务', '监控阶段', '分析系统日志并识别安全威胁']
     ]
     
     // 将数组转换为CSV格式字符串
@@ -570,27 +554,55 @@ const handleImport = async () => {
     return
   }
   
+  // 再次验证文件类型
+  const isValidFile = selectedFile.value.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                      selectedFile.value.type === 'application/vnd.ms-excel' ||
+                      selectedFile.value.type === 'text/csv' ||
+                      selectedFile.value.name.endsWith('.xlsx') ||
+                      selectedFile.value.name.endsWith('.xls') ||
+                      selectedFile.value.name.endsWith('.csv')
+  
+  if (!isValidFile) {
+    ElMessage.error('请选择正确的Excel或CSV文件格式')
+    return
+  }
+  
+  // 验证文件大小
+  if (selectedFile.value.size > 10 * 1024 * 1024) {
+    ElMessage.error('文件大小不能超过10MB')
+    return
+  }
+  
+  console.log('开始导入文件:', {
+    name: selectedFile.value.name,
+    size: selectedFile.value.size,
+    type: selectedFile.value.type
+  })
+  
   importLoading.value = true
   try {
-    // 模拟批量导入任务功能
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    const response = await bulkImportTasks(selectedFile.value)
     
-    Object.assign(importResult, {
-      success_count: 3,
-      fail_count: 1,
-      failed_tasks: [
-        { name: '测试任务', error: '任务名称重复' }
-      ],
-      message: '导入完成'
-    })
-    
-    bulkImportVisible.value = false
-    resultVisible.value = true
-    loadTasks() // 刷新任务列表
-    ElMessage.success('批量导入完成')
+    // 处理导入结果
+    if (response.data) {
+      Object.assign(importResult, response.data)
+      bulkImportVisible.value = false
+      resultVisible.value = true
+      
+      // 显示导入成功消息
+      if (importResult.success_count > 0) {
+        ElMessage.success(`成功导入 ${importResult.success_count} 个任务`)
+      }
+      
+      // 刷新任务列表
+      await loadTasks()
+    } else {
+      ElMessage.error('导入失败：响应数据格式错误')
+    }
   } catch (error: any) {
     console.error('批量导入失败:', error)
-    ElMessage.error('批量导入失败')
+    const errorMsg = error?.response?.data?.detail || error?.message || '批量导入失败'
+    ElMessage.error(errorMsg)
   } finally {
     importLoading.value = false
   }

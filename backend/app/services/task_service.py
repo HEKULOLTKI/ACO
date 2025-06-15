@@ -1,9 +1,12 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
+import logging
 from app.models.task import Task, TaskAssignment
 from app.models.user import User
-from app.schemas.task import TaskCreate, TaskUpdate, TaskAssignmentCreate, TaskAssignmentUpdate
+from app.schemas.task import TaskCreate, TaskUpdate, TaskAssignmentCreate, TaskAssignmentUpdate, TaskBulkImportResult
+
+logger = logging.getLogger(__name__)
 
 class TaskService:
     """任务服务类"""
@@ -53,6 +56,64 @@ class TaskService:
         db.commit()
         db.refresh(db_task)
         return db_task
+    
+    @staticmethod
+    def bulk_create_tasks(db: Session, tasks: List[TaskCreate]) -> TaskBulkImportResult:
+        """批量创建任务"""
+        success_count = 0
+        fail_count = 0
+        failed_tasks = []
+        
+        for task_data in tasks:
+            try:
+                # 检查任务名是否已存在
+                existing_task = db.query(Task).filter(Task.name == task_data.name).first()
+                if existing_task:
+                    fail_count += 1
+                    failed_tasks.append({
+                        "name": task_data.name,
+                        "error": "任务名称已存在"
+                    })
+                    continue
+                
+                # 创建任务
+                db_task = Task(
+                    name=task_data.name,
+                    type=task_data.type,
+                    phase=task_data.phase,
+                    description=task_data.description,
+                    status=task_data.status or '未分配'
+                )
+                db.add(db_task)
+                success_count += 1
+                
+            except Exception as e:
+                logger.error(f"创建任务 {task_data.name} 失败: {str(e)}")
+                fail_count += 1
+                failed_tasks.append({
+                    "name": task_data.name,
+                    "error": str(e)
+                })
+        
+        try:
+            db.commit()
+        except Exception as e:
+            logger.error(f"批量创建任务事务提交失败: {str(e)}")
+            db.rollback()
+            return TaskBulkImportResult(
+                success_count=0,
+                fail_count=len(tasks),
+                failed_tasks=[{"name": task.name, "error": "数据库操作失败"} for task in tasks],
+                message="批量导入失败"
+            )
+        
+        message = f"批量导入完成：成功 {success_count} 个，失败 {fail_count} 个"
+        return TaskBulkImportResult(
+            success_count=success_count,
+            fail_count=fail_count,
+            failed_tasks=failed_tasks,
+            message=message
+        )
     
     @staticmethod
     def update_task(db: Session, task_id: int, task: TaskUpdate) -> Optional[Task]:

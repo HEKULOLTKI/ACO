@@ -26,13 +26,10 @@
             placeholder="请选择任务类型"
             style="width: 100%"
           >
-            <el-option label="安全检测" value="安全检测" />
-            <el-option label="性能调优" value="性能调优" />
-            <el-option label="设备维护" value="设备维护" />
-            <el-option label="监控部署" value="监控部署" />
-            <el-option label="系统维护" value="系统维护" />
-            <el-option label="系统验证" value="系统验证" />
-            <el-option label="数据管理" value="数据管理" />
+            <el-option label="网络搭建任务" value="网络搭建任务" />
+            <el-option label="系统构建任务" value="系统构建任务" />
+            <el-option label="运维监管任务" value="运维监管任务" />
+            <el-option label="日志安全任务" value="日志安全任务" />
           </el-select>
         </el-form-item>
         <el-form-item label="任务阶段" prop="phase">

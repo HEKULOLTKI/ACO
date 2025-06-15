@@ -126,9 +126,10 @@ export enum TaskStatus {
 
 // 任务类型枚举
 export enum TaskType {
-  DEVELOPMENT = '开发测试任务',
-  OPERATION_MONITOR = '运维监控任务',
-  OPERATION_MANAGE = '运维管理任务'
+  NETWORK_BUILD = '网络搭建任务',
+  SYSTEM_BUILD = '系统构建任务', 
+  OPERATION_MONITOR = '运维监管任务',
+  LOG_SECURITY = '日志安全任务'
 }
 
 // 任务阶段枚举

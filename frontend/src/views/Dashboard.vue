@@ -30,8 +30,8 @@
           <img src="@/assets/icon/组 3591.png" alt="处理任务" />
         </div>
         <div class="stat-info">
-          <div class="stat-number">{{ taskStats.processingTasks }}个</div>
-          <div class="stat-label">处理任务数</div>
+          <div class="stat-number">{{ deviceStats.online_devices }}台</div>
+          <div class="stat-label">在线设备数</div>
         </div>
       </div>
 
@@ -201,21 +201,21 @@
       <div class="table-card">
         <div class="table-header">
           <h3 class="table-title">
-            <img src="@/assets/icon/设备.png" alt="任务信息" class="table-icon-img" />
-            任务信息
+            <img src="@/assets/icon/设备.png" alt="设备列表" class="table-icon-img" />
+            设备列表
           </h3>
           <div class="table-actions">
-            <button class="action-btn create-btn" @click="handleCreateTask">
-              <img src="@/assets/icon/添加.png" alt="创建任务" class="btn-icon-img" />
-              创建任务
+            <button class="action-btn create-btn" @click="handleCreateDevice">
+              <img src="@/assets/icon/添加.png" alt="添加设备" class="btn-icon-img" />
+              添加设备
             </button>
-            <button class="action-btn download-btn" @click="handleAssignTask">
-              <img src="@/assets/icon/任务.png" alt="任务下发" class="btn-icon-img" />
-              任务下发
+            <button class="action-btn download-btn" @click="handleManageDevice">
+              <img src="@/assets/icon/设备.png" alt="设备管理" class="btn-icon-img" />
+              设备管理
             </button>
-            <button class="action-btn progress-btn" @click="handleManageProgress">
-              <img src="@/assets/icon/系统参数.png" alt="进度管理" class="btn-icon-img" />
-              进度管理
+            <button class="action-btn progress-btn" @click="handleMonitorDevice">
+              <img src="@/assets/icon/系统参数.png" alt="设备监控" class="btn-icon-img" />
+              设备监控
             </button>
             <button class="action-btn import-btn" @click="handleRefreshData">
               <img src="@/assets/icon/upload.png" alt="刷新数据" class="btn-icon-img" />
@@ -224,38 +224,36 @@
           </div>
         </div>
         <div class="table-content">
-          <div v-if="taskLoading" class="loading-container">
+          <div v-if="deviceLoading" class="loading-container">
             <div class="loading-text">加载中...</div>
           </div>
           <table v-else class="device-table">
             <thead>
               <tr>
-                <th>任务ID</th>
-                <th>任务名称</th>
-                <th>任务类型</th>
-                <th>任务阶段</th>
-                <th>任务描述</th>
-                <th>执行角色</th>
+                <th>设备ID</th>
+                <th>设备名称</th>
+                <th>设备类型</th>
+                <th>IP地址</th>
+                <th>位置</th>
                 <th>状态</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="task in taskList" :key="task.id">
-                <td>{{ task.id }}</td>
-                <td>{{ task.name }}</td>
-                <td>{{ task.type || '-' }}</td>
-                <td>{{ task.phase || '-' }}</td>
-                <td>{{ task.description || '-' }}</td>
-                <td>-</td>
+              <tr v-for="device in deviceList" :key="device.id">
+                <td>{{ device.id }}</td>
+                <td>{{ device.name }}</td>
+                <td>{{ device.type || '-' }}</td>
+                <td>{{ device.ip || '-' }}</td>
+                <td>{{ device.location || '-' }}</td>
                 <td>
-                  <span :class="['status-tag', getStatusClass(task.status)]">
-                    {{ task.status }}
+                  <span :class="['status-tag', getDeviceStatusClass(device.status)]">
+                    {{ getDeviceStatusText(device.status) }}
                   </span>
                 </td>
               </tr>
-              <tr v-if="taskList.length === 0">
-                <td colspan="7" style="text-align: center; color: #999; padding: 40px;">
-                  暂无任务数据
+              <tr v-if="deviceList.length === 0">
+                <td colspan="6" style="text-align: center; color: #999; padding: 40px;">
+                  暂无设备数据
                 </td>
               </tr>
             </tbody>
@@ -264,17 +262,16 @@
       </div>
     </div>
 
-    <!-- 任务管理组件 -->
-    <TaskManagement ref="taskManagementRef" @refresh="loadTaskData" />
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import * as echarts from 'echarts'
-import { getTasks, getTasksCount, type Task } from '@/api/task'
+import { getDevices } from '@/api/device'
+import type { Device, DeviceStatistics } from '@/types/device'
 import { ElMessage } from 'element-plus'
-import TaskManagement from '@/components/TaskManagement.vue'
 
 interface DeviceInfo {
   id: number
@@ -292,8 +289,6 @@ const systemChart = ref<HTMLElement>()
 const deviceChart = ref<HTMLElement>()
 const alertStatusChart = ref<HTMLElement>()
 const alertLevelChart = ref<HTMLElement>()
-const taskManagementRef = ref<InstanceType<typeof TaskManagement>>()
-
 // 实时数据
 const realtimeData = ref({
   cpu: [18, 20, 22, 19, 21, 20, 23, 18, 19, 21, 20],
@@ -328,120 +323,151 @@ const generateTimeLabels = () => {
   return labels
 }
 
-// 任务列表数据 - 使用后端API
-const taskList = ref<Task[]>([])
-const taskStats = ref({
-  totalTasks: 0,
-  processingTasks: 0
+// 设备列表数据 - 使用后端API
+const deviceList = ref<Device[]>([])
+const deviceStats = ref<DeviceStatistics>({
+  total_devices: 0,
+  online_devices: 0,
+  offline_devices: 0,
+  type_statistics: {}
 })
-const taskLoading = ref(false)
+const deviceLoading = ref(false)
 
 // 系统告警数据
 const systemAlertData = ref([
   {
-    type: '服务器告警',
-    category: '资源告警',
+    type: '风扇异常',
+    category: '硬件告警',
     phase: '严重告警',
-    detail1: '服务器节点1 - CPU使用率过高 (85%)',
-    detail2: '内存使用率: 78% | 可用空间不足',
-    detail3: '建议立即检查进程占用情况'
+    detail1: '服务器节点1 - 风扇转速异常 (2100RPM)',
+    detail2: '温度传感器显示: 78°C | 超过安全阈值',
+    detail3: '建议立即检查风扇运行状态或更换'
   },
   {
-    type: '存储告警',
-    category: '磁盘告警',
+    type: '电源异常',
+    category: '硬件告警',
     phase: '警告',
-    detail1: '服务器节点2 - 磁盘空间不足 (92%)',
-    detail2: '系统盘 /dev/sda1 剩余空间: 2.1GB',
-    detail3: '建议清理日志文件或扩容'
+    detail1: '服务器节点2 - 电源模块功率异常 (85%)',
+    detail2: '电压不稳定: 11.2V | 标准值: 12V±5%',
+    detail3: '建议检查电源线路或更换电源模块'
   }
 ])
 
 
 
-// 加载任务数据
-const loadTaskData = async () => {
-  if (taskLoading.value) return
+// 加载设备数据
+const loadDeviceData = async () => {
+  if (deviceLoading.value) return
   
-  taskLoading.value = true
+  deviceLoading.value = true
   try {
-    // 获取任务列表
-    const tasksResponse = await getTasks({ limit: 10 })
-    taskList.value = tasksResponse.data
+    // 获取设备列表
+    const devicesResponse = await getDevices({ limit: 10 })
+    deviceList.value = devicesResponse.data.devices
     
-    // 获取任务统计
-    const totalResponse = await getTasksCount()
-    const processingResponse = await getTasksCount({ status: '进行中' })
+    // 计算本地设备统计（不调用统计接口）
+    const onlineDevices = deviceList.value.filter(device => device.status === 'online').length
+    const offlineDevices = deviceList.value.filter(device => device.status === 'offline').length
+    const maintenanceDevices = deviceList.value.filter(device => device.status === 'maintenance').length
     
-    taskStats.value = {
-      totalTasks: totalResponse.data.count,
-      processingTasks: processingResponse.data.count
+    // 统计设备类型
+    const typeStats: { [key: string]: number } = {}
+    deviceList.value.forEach(device => {
+      if (device.type) {
+        typeStats[device.type] = (typeStats[device.type] || 0) + 1
+      }
+    })
+    
+    deviceStats.value = {
+      total_devices: deviceList.value.length,
+      online_devices: onlineDevices,
+      offline_devices: offlineDevices + maintenanceDevices,
+      type_statistics: typeStats
     }
     
   } catch (error) {
-    console.error('加载任务数据失败:', error)
+    console.error('加载设备数据失败:', error)
     // 如果是网络错误或者无法连接后端，使用默认数据
-    if (taskList.value.length === 0) {
-      taskList.value = [
-        {
-          id: 1,
-          name: '系统监控任务',
-          type: '监控检测',
-          phase: '监控阶段',
-          description: '对系统进行实时监控和状态检查',
-          status: '进行中',
-          create_time: new Date().toISOString(),
-          update_time: new Date().toISOString()
-        },
-        {
-          id: 2,
-          name: '数据备份任务',
-          type: '数据管理',
-          phase: '备份阶段',
-          description: '定期备份重要数据',
-          status: '未分配',
-          create_time: new Date().toISOString(),
-          update_time: new Date().toISOString()
-        }
-      ]
-      taskStats.value = {
-        totalTasks: 2,
-        processingTasks: 1
+    deviceList.value = [
+      {
+        id: 1,
+        name: '服务器-01',
+        type: 'server',
+        ip: '192.168.1.100',
+        status: 'online',
+        location: '机房A-01'
+      },
+      {
+        id: 2,
+        name: '服务器-02',
+        type: 'server',
+        ip: '192.168.1.101',
+        status: 'offline',
+        location: '机房A-02'
+      },
+      {
+        id: 3,
+        name: '工作站-01',
+        type: 'workstation',
+        ip: '192.168.1.200',
+        status: 'online',
+        location: '办公室-203'
       }
-      ElMessage.warning('使用演示数据，请确保后端服务正常运行')
+    ]
+    deviceStats.value = {
+      total_devices: 3,
+      online_devices: 2,
+      offline_devices: 1,
+      type_statistics: {
+        'server': 2,
+        'workstation': 1
+      }
     }
+    ElMessage.warning('使用演示数据，请确保后端服务正常运行')
   } finally {
-    taskLoading.value = false
+    deviceLoading.value = false
   }
 }
 
-// 任务操作处理函数
-const handleCreateTask = () => {
-  taskManagementRef.value?.showCreateTask()
+// 设备操作处理函数
+const handleCreateDevice = () => {
+  // 跳转到设备管理页面
+  ElMessage.info('跳转到设备管理页面创建设备')
 }
 
-const handleAssignTask = () => {
-  taskManagementRef.value?.showAssignTask()
+const handleManageDevice = () => {
+  // 跳转到设备管理页面
+  ElMessage.info('跳转到设备管理页面')
 }
 
-const handleManageProgress = () => {
-  taskManagementRef.value?.showProgressManagement()
+const handleMonitorDevice = () => {
+  // 设备监控功能
+  ElMessage.info('设备监控功能')
 }
 
 const handleRefreshData = () => {
-  loadTaskData()
+  loadDeviceData()
   ElMessage.success('数据刷新成功')
 }
 
 
 
-const getStatusClass = (status: string) => {
+const getDeviceStatusClass = (status: string) => {
   const statusMap: { [key: string]: string } = {
-    '未分配': 'status-unassigned',
-    '已分配': 'status-assigned',
-    '进行中': 'status-processing',
-    '已完成': 'status-completed'
+    'online': 'status-online',
+    'offline': 'status-offline',
+    'maintenance': 'status-maintenance'
   }
   return statusMap[status] || 'status-default'
+}
+
+const getDeviceStatusText = (status: string) => {
+  const textMap: { [key: string]: string } = {
+    'online': '在线',
+    'offline': '离线',
+    'maintenance': '维护中'
+  }
+  return textMap[status] || status
 }
 
 // 根据告警级别返回对应的CSS类
@@ -826,7 +852,7 @@ onMounted(async () => {
   initSystemChart()
   initAlertStatusChart()
   initAlertLevelChart()
-  loadTaskData()
+  loadDeviceData()
 })
 
 // 组件卸载时清理定时器
@@ -1446,24 +1472,24 @@ onUnmounted(() => {
           font-size: 11px;
           font-weight: 500;
 
-          &.status-unassigned {
+          &.status-online {
+            background: #ecfdf5;
+            color: #059669;
+          }
+
+          &.status-offline {
             background: #fef2f2;
             color: #dc2626;
           }
 
-          &.status-assigned {
-            background: #eff6ff;
-            color: #2563eb;
-          }
-
-          &.status-processing {
+          &.status-maintenance {
             background: #fef3c7;
             color: #d97706;
           }
 
-          &.status-completed {
-            background: #ecfdf5;
-            color: #059669;
+          &.status-default {
+            background: #f3f4f6;
+            color: #6b7280;
           }
         }
       }

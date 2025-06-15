@@ -11,24 +11,36 @@ class TaskBase(BaseModel):
     status: Optional[str] = '未分配'
 
 class TaskCreate(TaskBase):
-    """任务创建模式"""
+    """创建任务模式"""
     pass
 
 class TaskUpdate(BaseModel):
-    """任务更新模式"""
+    """更新任务模式"""
     name: Optional[str] = None
     type: Optional[str] = None
     phase: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
 
-class TaskResponse(TaskBase):
+class Task(TaskBase):
     """任务响应模式"""
     id: int
     create_time: datetime
     update_time: datetime
     
     model_config = ConfigDict(from_attributes=True)
+
+class TaskInDB(Task):
+    """数据库中的任务模式"""
+    pass
+
+# 批量导入结果
+class TaskBulkImportResult(BaseModel):
+    """任务批量导入结果"""
+    success_count: int
+    fail_count: int
+    failed_tasks: List[dict]
+    message: str
 
 class TaskAssignmentBase(BaseModel):
     """任务分配基础模式"""
@@ -63,6 +75,6 @@ class TaskAssignmentResponse(TaskAssignmentBase):
     
     model_config = ConfigDict(from_attributes=True)
 
-class TaskWithAssignments(TaskResponse):
+class TaskWithAssignments(Task):
     """包含分配信息的任务模式"""
     assignments: List[TaskAssignmentResponse] = [] 

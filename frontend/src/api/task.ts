@@ -39,42 +39,53 @@ export interface TaskStats {
   average_score: number
 }
 
-// 获取任务列表
-export const getTasks = (params?: {
-  skip?: number
-  limit?: number
+export interface TaskForm {
+  name: string
+  type: string
+  phase: string
+  description: string
   status?: string
-  task_type?: string
-}) => {
+}
+
+// 批量导入结果
+export interface TaskBulkImportResult {
+  success_count: number
+  fail_count: number
+  failed_tasks: Array<{
+    name: string
+    error: string
+  }>
+  message: string
+}
+
+// 获取任务列表
+export const getTasks = (params?: any) => {
   return request.get<Task[]>('/tasks', { params })
 }
 
 // 获取任务总数
-export const getTasksCount = (params?: {
-  status?: string
-  task_type?: string
-}) => {
+export const getTasksCount = (params?: any) => {
   return request.get<{ count: number }>('/tasks/count', { params })
 }
 
 // 获取任务详情
-export const getTask = (taskId: number) => {
-  return request.get<TaskWithAssignments>(`/tasks/${taskId}`)
+export const getTask = (id: number) => {
+  return request.get<Task>(`/tasks/${id}`)
 }
 
 // 创建任务
-export const createTask = (data: Omit<Task, 'id' | 'create_time' | 'update_time'>) => {
+export const createTask = (data: TaskForm) => {
   return request.post<Task>('/tasks', data)
 }
 
 // 更新任务
-export const updateTask = (taskId: number, data: Partial<Omit<Task, 'id' | 'create_time' | 'update_time'>>) => {
-  return request.put<Task>(`/tasks/${taskId}`, data)
+export const updateTask = (id: number, data: Partial<TaskForm>) => {
+  return request.put<Task>(`/tasks/${id}`, data)
 }
 
 // 删除任务
-export const deleteTask = (taskId: number) => {
-  return request.delete(`/tasks/${taskId}`)
+export const deleteTask = (id: number) => {
+  return request.delete(`/tasks/${id}`)
 }
 
 // 获取任务分配列表
@@ -118,4 +129,15 @@ export const updateMyTask = (assignmentId: number, data: {
   comments?: string
 }) => {
   return request.put<TaskAssignment>(`/my-tasks/${assignmentId}`, data)
+}
+
+// 批量导入任务
+export const bulkImportTasks = (file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post<TaskBulkImportResult>('/tasks/bulk-import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 } 

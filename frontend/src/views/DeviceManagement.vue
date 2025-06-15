@@ -23,9 +23,12 @@
           </el-form-item>
           <el-form-item label="状态">
             <el-select v-model="searchForm.status" placeholder="选择状态" clearable>
-              <el-option label="在线" value="online" />
-              <el-option label="离线" value="offline" />
-              <el-option label="维护中" value="maintenance" />
+              <el-option 
+                v-for="option in DEVICE_STATUS_OPTIONS" 
+                :key="option.value"
+                :label="option.label" 
+                :value="option.value" 
+              />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -43,6 +46,7 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="设备名称" />
         <el-table-column prop="type" label="设备类型" />
+        <el-table-column prop="ip" label="IP地址" />
         <el-table-column prop="status" label="状态">
           <template #default="scope">
             <el-tag :type="getStatusType(scope.row.status)">
@@ -54,7 +58,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="location" label="位置" />
-        <el-table-column prop="last_active" label="最后活跃时间" />
         <el-table-column label="操作" width="250">
           <template #default="scope">
             <el-button 
@@ -109,19 +112,26 @@
         </el-form-item>
         <el-form-item label="设备类型" prop="type">
           <el-select v-model="deviceForm.type" placeholder="选择设备类型">
-            <el-option label="服务器" value="server" />
-            <el-option label="工作站" value="workstation" />
-            <el-option label="路由器" value="router" />
-            <el-option label="交换机" value="switch" />
-            <el-option label="其他" value="other" />
+            <el-option 
+              v-for="option in DEVICE_TYPE_OPTIONS" 
+              :key="option.value"
+              :label="option.label" 
+              :value="option.value" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="deviceForm.status" placeholder="选择状态">
-            <el-option label="在线" value="online" />
-            <el-option label="离线" value="offline" />
-            <el-option label="维护中" value="maintenance" />
+            <el-option 
+              v-for="option in DEVICE_STATUS_OPTIONS" 
+              :key="option.value"
+              :label="option.label" 
+              :value="option.value" 
+            />
           </el-select>
+        </el-form-item>
+        <el-form-item label="IP地址" prop="ip">
+          <el-input v-model="deviceForm.ip" placeholder="请输入设备IP地址" />
         </el-form-item>
         <el-form-item label="位置" prop="location">
           <el-input v-model="deviceForm.location" placeholder="请输入设备位置" />
@@ -144,15 +154,15 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { Plus, Search, Connection, Refresh, Warning } from '@element-plus/icons-vue'
-
-interface Device {
-  id: number
-  name: string
-  type: string
-  status: string
-  location: string
-  last_active: string
-}
+import { 
+  getDevices, 
+  createDevice, 
+  updateDevice, 
+  deleteDevice, 
+  updateDeviceStatus 
+} from '@/api/device'
+import type { Device, DeviceForm } from '@/types/device'
+import { DEVICE_STATUS_OPTIONS, DEVICE_TYPE_OPTIONS } from '@/types/device'
 
 const loading = ref(false)
 const dialogVisible = ref(false)
@@ -164,10 +174,11 @@ const searchForm = reactive({
   status: ''
 })
 
-const deviceForm = reactive({
+const deviceForm = reactive<DeviceForm>({
   id: 0,
   name: '',
   type: '',
+  ip: '',
   status: 'offline',
   location: ''
 })
@@ -187,6 +198,9 @@ const rules = {
   ],
   type: [
     { required: true, message: '请选择设备类型', trigger: 'change' }
+  ],
+  ip: [
+    { pattern: /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/, message: '请输入正确的IP地址格式', trigger: 'blur' }
   ],
   status: [
     { required: true, message: '请选择状态', trigger: 'change' }
@@ -238,43 +252,17 @@ const getStatusIcon = (status: string) => {
 const loadDevices = async () => {
   loading.value = true
   try {
-    // 模拟数据加载
-    devices.value = [
-      {
-        id: 1,
-        name: '服务器-01',
-        type: 'server',
-        status: 'online',
-        location: '机房A-01',
-        last_active: '2024-01-15 12:30'
-      },
-      {
-        id: 2,
-        name: '服务器-02',
-        type: 'server',
-        status: 'offline',
-        location: '机房A-02',
-        last_active: '2024-01-14 18:45'
-      },
-      {
-        id: 3,
-        name: '工作站-01',
-        type: 'workstation',
-        status: 'online',
-        location: '办公室-203',
-        last_active: '2024-01-15 11:20'
-      },
-      {
-        id: 4,
-        name: '路由器-01',
-        type: 'router',
-        status: 'maintenance',
-        location: '网络中心',
-        last_active: '2024-01-13 09:15'
-      }
-    ]
-    pagination.total = devices.value.length
+    const response = await getDevices({
+      skip: (pagination.currentPage - 1) * pagination.pageSize,
+      limit: pagination.pageSize,
+      name: searchForm.name || undefined,
+      status: searchForm.status || undefined
+    })
+    
+    devices.value = response.data.devices
+    pagination.total = response.data.total
   } catch (error) {
+    console.error('获取设备列表失败:', error)
     ElMessage.error('加载设备列表失败')
   } finally {
     loading.value = false
@@ -318,10 +306,14 @@ const handleToggleStatus = async (row: Device) => {
       }
     )
     
+    await updateDeviceStatus(row.id, newStatus)
     ElMessage.success(`设备${action}成功`)
     loadDevices()
-  } catch (error) {
-    // 用户取消了操作
+  } catch (error: any) {
+    if (error.message !== 'cancel') {
+      console.error('更新设备状态失败:', error)
+      ElMessage.error('更新设备状态失败')
+    }
   }
 }
 
@@ -337,10 +329,14 @@ const handleDelete = async (row: Device) => {
       }
     )
     
+    await deleteDevice(row.id)
     ElMessage.success('删除成功')
     loadDevices()
-  } catch (error) {
-    // 用户取消了删除操作
+  } catch (error: any) {
+    if (error.message !== 'cancel') {
+      console.error('删除设备失败:', error)
+      ElMessage.error('删除设备失败')
+    }
   }
 }
 
@@ -349,11 +345,34 @@ const handleSubmit = async () => {
   
   try {
     await formRef.value.validate()
-    ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+    
+    if (isEdit.value && deviceForm.id) {
+      // 更新设备
+      await updateDevice(deviceForm.id, {
+        name: deviceForm.name,
+        type: deviceForm.type,
+        ip: deviceForm.ip,
+        status: deviceForm.status,
+        location: deviceForm.location
+      })
+      ElMessage.success('更新成功')
+    } else {
+      // 创建设备
+      await createDevice({
+        name: deviceForm.name,
+        type: deviceForm.type,
+        ip: deviceForm.ip,
+        status: deviceForm.status,
+        location: deviceForm.location
+      })
+      ElMessage.success('创建成功')
+    }
+    
     dialogVisible.value = false
     loadDevices()
-  } catch (error) {
-    console.error('表单验证失败:', error)
+  } catch (error: any) {
+    console.error('操作失败:', error)
+    ElMessage.error(isEdit.value ? '更新失败' : '创建失败')
   }
 }
 
@@ -361,6 +380,7 @@ const resetForm = () => {
   deviceForm.id = 0
   deviceForm.name = ''
   deviceForm.type = ''
+  deviceForm.ip = ''
   deviceForm.status = 'offline'
   deviceForm.location = ''
 }

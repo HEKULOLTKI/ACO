@@ -1,6 +1,6 @@
 from .user import UserBase, UserCreate, UserUpdate, UserResponse, UserLogin
 from .task import (
-    TaskBase, TaskCreate, TaskUpdate, TaskResponse, TaskWithAssignments,
+    TaskBase, TaskCreate, TaskUpdate, Task, TaskWithAssignments,
     TaskAssignmentBase, TaskAssignmentCreate, TaskAssignmentUpdate, TaskAssignmentResponse
 )
 from .device import DeviceBase, DeviceCreate, DeviceUpdate, DeviceResponse
@@ -9,7 +9,7 @@ from .system import SystemSettingsResponse, SystemSettingsUpdate
 
 __all__ = [
     "UserBase", "UserCreate", "UserUpdate", "UserResponse", "UserLogin",
-    "TaskBase", "TaskCreate", "TaskUpdate", "TaskResponse", "TaskWithAssignments",
+    "TaskBase", "TaskCreate", "TaskUpdate", "Task", "TaskWithAssignments",
     "TaskAssignmentBase", "TaskAssignmentCreate", "TaskAssignmentUpdate", "TaskAssignmentResponse",
     "DeviceBase", "DeviceCreate", "DeviceUpdate", "DeviceResponse",
     "DesktopItemBase", "DesktopItemCreate", "DesktopItemResponse",
