@@ -329,7 +329,8 @@ const confirmSelection = async () => {
     }
     
     // 构建发送的用户信息数据
-    const userDataToSend = userCompleteInfo || {
+    const token = localStorage.getItem('token') || authStore.token
+    let userDataToSend = userCompleteInfo || {
       action: 'user_data_sync',
       sync_info: {
         sync_type: 'fallback_user_export',
@@ -338,7 +339,8 @@ const confirmSelection = async () => {
           user_id: currentUser.id,
           username: currentUser.username,
           operator_role: currentUser.role,
-          operator_type: currentUser.type
+          operator_type: currentUser.type,
+          token: token // 添加当前用户的token
         },
         session: {
           ip_address: 'unknown',
@@ -375,6 +377,11 @@ const confirmSelection = async () => {
       }
     }
     
+    // 确保token始终被添加到发送的数据中
+    if (userDataToSend && userDataToSend.sync_info && userDataToSend.sync_info.operator) {
+      userDataToSend.sync_info.operator.token = token
+    }
+    
     // 向用户登录的IP地址发送JSON数据
     const userIP = userCompleteInfo?.sync_info?.session?.ip_address
     const targetUrl = userIP && userIP !== 'unknown' && userIP !== 'null'
@@ -386,6 +393,10 @@ const confirmSelection = async () => {
     console.log('   目标地址:', targetUrl)
     console.log('   数据大小:', JSON.stringify(userDataToSend).length, '字节')
     console.log('   用户数量:', userDataToSend.users.length)
+    console.log('   包含Token:', token ? '是' : '否')
+    if (token) {
+      console.log('   Token前缀:', token.substring(0, 20) + '...')
+    }
     
     try {
       // 增加超时时间和更详细的错误处理

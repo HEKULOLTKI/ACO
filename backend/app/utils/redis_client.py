@@ -182,6 +182,178 @@ class RedisClient:
                     self.redis_client.srem("online_users", user_id)
         except Exception as e:
             print(f"清理过期用户失败: {e}")
+    
+    # ===== 聊天相关功能 =====
+    
+    def save_chat_message(self, room_id: str, message_data: Dict[str, Any]):
+        """保存聊天消息到Redis"""
+        try:
+            # 将消息添加到聊天室消息列表
+            self.redis_client.lpush(f"chat:messages:{room_id}", json.dumps(message_data))
+            
+            # 只保留最近1000条消息
+            self.redis_client.ltrim(f"chat:messages:{room_id}", 0, 999)
+            
+            # 设置过期时间（7天）
+            self.redis_client.expire(f"chat:messages:{room_id}", 604800)
+            
+            # 更新聊天室最后活动时间
+            self.redis_client.hset(f"chat:room:{room_id}", "last_activity", time.time())
+            
+            # 增加今日消息计数
+            today = datetime.now().strftime("%Y-%m-%d")
+            self.redis_client.incr(f"chat:stats:messages:{today}")
+            self.redis_client.expire(f"chat:stats:messages:{today}", 86400 * 30)  # 30天过期
+            
+        except Exception as e:
+            print(f"保存聊天消息失败: {e}")
+    
+    def get_chat_messages(self, room_id: str, limit: int = 50, before: Optional[str] = None) -> List[Dict[str, Any]]:
+        """获取聊天消息"""
+        try:
+            if before:
+                # 如果指定了before参数，需要找到该消息的位置然后获取之前的消息
+                messages = self.redis_client.lrange(f"chat:messages:{room_id}", 0, -1)
+                all_messages = [json.loads(msg) for msg in messages]
+                
+                # 找到before消息的索引
+                before_index = -1
+                for i, msg in enumerate(all_messages):
+                    if msg.get('id') == before:
+                        before_index = i
+                        break
+                
+                if before_index >= 0:
+                    # 返回before索引之后的消息（更早的消息）
+                    start_index = before_index + 1
+                    end_index = min(start_index + limit, len(all_messages))
+                    return all_messages[start_index:end_index]
+                else:
+                    return []
+            else:
+                # 获取最新的消息
+                messages = self.redis_client.lrange(f"chat:messages:{room_id}", 0, limit - 1)
+                return [json.loads(msg) for msg in messages]
+        except Exception as e:
+            print(f"获取聊天消息失败: {e}")
+            return []
+    
+    def get_chat_rooms(self) -> List[str]:
+        """获取所有聊天室ID"""
+        try:
+            # 通过模式匹配获取所有聊天室
+            room_keys = self.redis_client.keys("chat:room:*")
+            return [key.replace("chat:room:", "") for key in room_keys]
+        except Exception as e:
+            print(f"获取聊天室列表失败: {e}")
+            return []
+    
+    def create_chat_room(self, room_id: str, room_name: str, description: str = "", creator_id: int = 0):
+        """创建聊天室"""
+        try:
+            room_data = {
+                "id": room_id,
+                "name": room_name,
+                "description": description,
+                "creator_id": creator_id,
+                "created_at": time.time(),
+                "last_activity": time.time(),
+                "member_count": 0
+            }
+            
+            # 保存聊天室信息
+            for key, value in room_data.items():
+                self.redis_client.hset(f"chat:room:{room_id}", key, str(value))
+            
+            # 添加到聊天室列表
+            self.redis_client.sadd("chat:rooms", room_id)
+            
+        except Exception as e:
+            print(f"创建聊天室失败: {e}")
+    
+    def join_chat_room(self, room_id: str, user_id: int):
+        """用户加入聊天室"""
+        try:
+            # 添加用户到聊天室成员
+            self.redis_client.sadd(f"chat:room:{room_id}:members", user_id)
+            
+            # 更新成员数量
+            member_count = self.redis_client.scard(f"chat:room:{room_id}:members")
+            self.redis_client.hset(f"chat:room:{room_id}", "member_count", member_count)
+            
+            # 添加用户的聊天室列表
+            self.redis_client.sadd(f"user:{user_id}:chat_rooms", room_id)
+            
+        except Exception as e:
+            print(f"加入聊天室失败: {e}")
+    
+    def leave_chat_room(self, room_id: str, user_id: int):
+        """用户离开聊天室"""
+        try:
+            # 从聊天室成员中移除用户
+            self.redis_client.srem(f"chat:room:{room_id}:members", user_id)
+            
+            # 更新成员数量
+            member_count = self.redis_client.scard(f"chat:room:{room_id}:members")
+            self.redis_client.hset(f"chat:room:{room_id}", "member_count", member_count)
+            
+            # 从用户的聊天室列表中移除
+            self.redis_client.srem(f"user:{user_id}:chat_rooms", room_id)
+            
+        except Exception as e:
+            print(f"离开聊天室失败: {e}")
+    
+    def get_room_members(self, room_id: str) -> List[int]:
+        """获取聊天室成员"""
+        try:
+            members = self.redis_client.smembers(f"chat:room:{room_id}:members")
+            return [int(member) for member in members]
+        except Exception as e:
+            print(f"获取聊天室成员失败: {e}")
+            return []
+    
+    def get_user_chat_rooms(self, user_id: int) -> List[str]:
+        """获取用户加入的聊天室"""
+        try:
+            return list(self.redis_client.smembers(f"user:{user_id}:chat_rooms"))
+        except Exception as e:
+            print(f"获取用户聊天室失败: {e}")
+            return []
+    
+    def get_chat_stats(self) -> Dict[str, Any]:
+        """获取聊天统计信息"""
+        try:
+            today = datetime.now().strftime("%Y-%m-%d")
+            
+            stats = {
+                "online_users_count": self.get_online_users_count(),
+                "total_messages_today": int(self.redis_client.get(f"chat:stats:messages:{today}") or 0),
+                "active_rooms": self.redis_client.scard("chat:rooms")
+            }
+            
+            return stats
+        except Exception as e:
+            print(f"获取聊天统计失败: {e}")
+            return {"online_users_count": 0, "total_messages_today": 0, "active_rooms": 0}
+    
+    def delete_chat_message(self, room_id: str, message_id: str, user_id: int):
+        """删除聊天消息（软删除）"""
+        try:
+            # 获取所有消息
+            messages = self.redis_client.lrange(f"chat:messages:{room_id}", 0, -1)
+            
+            # 找到要删除的消息并标记为已删除
+            for i, msg_str in enumerate(messages):
+                msg = json.loads(msg_str)
+                if msg.get('id') == message_id and msg.get('sender_id') == user_id:
+                    msg['deleted'] = True
+                    msg['deleted_at'] = time.time()
+                    # 更新消息
+                    self.redis_client.lset(f"chat:messages:{room_id}", i, json.dumps(msg))
+                    break
+                    
+        except Exception as e:
+            print(f"删除聊天消息失败: {e}")
 
 
 # 创建全局Redis客户端实例

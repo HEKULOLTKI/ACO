@@ -6,6 +6,10 @@ from .task import (
 from .device import DeviceBase, DeviceCreate, DeviceUpdate, DeviceResponse
 from .desktop import DesktopItemBase, DesktopItemCreate, DesktopItemResponse
 from .system import SystemSettingsResponse, SystemSettingsUpdate
+from .chat import (
+    MessageType, ChatMessage, ChatMessageCreate, ChatRoom, OnlineUser,
+    ChatHistory, FileUploadResponse, ChatStats
+)
 
 __all__ = [
     "UserBase", "UserCreate", "UserUpdate", "UserResponse", "UserLogin",
@@ -13,5 +17,7 @@ __all__ = [
     "TaskAssignmentBase", "TaskAssignmentCreate", "TaskAssignmentUpdate", "TaskAssignmentResponse",
     "DeviceBase", "DeviceCreate", "DeviceUpdate", "DeviceResponse",
     "DesktopItemBase", "DesktopItemCreate", "DesktopItemResponse",
-    "SystemSettingsResponse", "SystemSettingsUpdate"
+    "SystemSettingsResponse", "SystemSettingsUpdate",
+    "MessageType", "ChatMessage", "ChatMessageCreate", "ChatRoom", "OnlineUser",
+    "ChatHistory", "FileUploadResponse", "ChatStats"
 ] 
