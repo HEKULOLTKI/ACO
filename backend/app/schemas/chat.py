@@ -15,6 +15,7 @@ class ChatMessage(BaseModel):
     id: str = Field(..., description="消息ID")
     sender_id: int = Field(..., description="发送者ID")
     sender_name: str = Field(..., description="发送者用户名")
+    sender_role: Optional[str] = Field(None, description="发送者角色")
     message_type: MessageType = Field(default=MessageType.TEXT, description="消息类型")
     content: str = Field(..., description="消息内容")
     file_url: Optional[str] = Field(None, description="文件URL")

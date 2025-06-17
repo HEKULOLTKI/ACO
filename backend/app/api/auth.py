@@ -137,19 +137,28 @@ async def login_for_access_token(
 
 @router.post("/logout")
 async def logout(current_user = Depends(get_current_user)):
-    """用户登出"""
-    # 设置用户离线状态
-    redis_client.set_user_offline(current_user.id)
-    
-    # 清除用户的所有Redis缓存
-    clear_user_redis_cache(current_user.id)
-    
-    # 清除用户的密码缓存
-    from app.utils.password_utils import PasswordUtils
-    PasswordUtils.clear_user_password_cache(current_user.id)
-    
-    # 在实际应用中，这里可以将token加入黑名单
-    return {"message": "登出成功，用户缓存已清除"}
+    """用户主动登出"""
+    try:
+        # 设置用户离线状态
+        redis_client.set_user_offline(current_user.id)
+        
+        # 记录登出
+        redis_client.add_login_record(
+            user_id=current_user.id,
+            ip=redis_client.get_user_ip(current_user.id) or "unknown",
+            user_agent="logout",
+            status="logout"
+        )
+        
+        return {
+            "message": "用户已成功登出",
+            "user_id": current_user.id,
+            "username": current_user.username,
+            "logout_time": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"登出失败: {str(e)}")
 
 @router.get("/me", response_model=UserResponse)
 async def read_users_me(current_user = Depends(get_current_user)) -> UserResponse:
@@ -223,45 +232,25 @@ async def get_system_stats(current_user = Depends(get_current_user)):
 
 @router.get("/user-session-info")
 async def get_user_session_info(current_user = Depends(get_current_user), db: Session = Depends(get_db)):
-    """获取当前用户的会话信息，包括IP地址和分配给用户的任务"""
-    from app.services.task_service import TaskAssignmentService
-    
-    # 获取用户IP地址
-    user_ip = redis_client.get_user_ip(current_user.id)
-    user_info = redis_client.get_user_online_info(current_user.id)
-    
-    # 获取分配给当前用户的任务（从task_assignments表中）
-    user_assignments = []
+    """获取用户会话和在线信息"""
     try:
-        # 使用TaskAssignmentService获取分配给当前用户的任务
-        assignments = TaskAssignmentService.get_assignments_by_user(
-            db=db, 
-            user_id=current_user.id
-        )
+        # 获取用户IP
+        user_ip = redis_client.get_user_ip(current_user.id)
         
-        user_assignments = [
-            {
-                "assignment_id": assignment.id,
-                "task_id": assignment.task_id,
-                "task_name": assignment.task_name,
-                "task_type": assignment.task_type,
-                "task_phase": assignment.task_phase,
-                "username": assignment.username,
-                "status": assignment.status,
-                "progress": assignment.progress,
-                "performance_score": assignment.performance_score,
-                "comments": assignment.comments,
-                "assigned_at": assignment.assigned_at.isoformat() if assignment.assigned_at else None,
-                "last_update": assignment.last_update.isoformat() if assignment.last_update else None,
-                # 添加任务详细信息
-                "task_description": "",  # 稍后从task表中获取
-                "priority": "normal",     # 默认优先级
-                "estimated_duration": "unknown",
-                "requirements": [],
-                "deliverables": []
-            }
-            for assignment in assignments
-        ]
+        # 获取用户在线信息
+        user_info = redis_client.get_user_online_info(current_user.id)
+        
+        # 获取在线时长信息
+        duration_info = redis_client.get_user_online_duration(current_user.id)
+        
+        # 获取用户任务分配
+        user_assignments = []
+        try:
+            from app.services.task_service import TaskService
+            user_assignments = TaskService.get_user_task_assignments(db=db, user_id=current_user.id)
+        except Exception as e:
+            print(f"获取用户任务分配时发生错误: {e}")
+            user_assignments = []
         
         # 补充任务详细信息
         for assignment_data in user_assignments:
@@ -289,11 +278,39 @@ async def get_user_session_info(current_user = Depends(get_current_user), db: Se
         "type": current_user.type,
         "ip_address": user_ip,
         "session_info": user_info,
+        "online_duration": duration_info,  # 添加在线时长信息
         "assigned_tasks": user_assignments,  # 改名为更明确的assigned_tasks
         "is_online": redis_client.is_user_online(current_user.id),
         "query_timestamp": current_timestamp,
         "tasks_count": len(user_assignments),
         "data_source": "task_assignments_table"
+    }
+
+@router.get("/online-duration")
+async def get_user_online_duration(current_user = Depends(get_current_user)):
+    """获取当前用户的在线时长和剩余时间"""
+    duration_info = redis_client.get_user_online_duration(current_user.id)
+    
+    return {
+        "user_id": current_user.id,
+        "username": current_user.username,
+        **duration_info,
+        "timeout_hours": 1,  # 超时时间1小时
+        "cleanup_interval_minutes": 5  # 清理间隔5分钟
+    }
+
+@router.get("/check-timeout")
+async def check_user_timeout(current_user = Depends(get_current_user)):
+    """检查当前用户是否已超时"""
+    is_timeout = redis_client.check_user_activity_timeout(current_user.id)
+    duration_info = redis_client.get_user_online_duration(current_user.id)
+    
+    return {
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "is_timeout": is_timeout,
+        "is_online": redis_client.is_user_online(current_user.id),
+        **duration_info
     }
 
 @router.get("/user-complete-info")

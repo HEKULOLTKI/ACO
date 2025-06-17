@@ -45,6 +45,7 @@ async def send_message(
             "id": message_id,
             "sender_id": current_user.id,
             "sender_name": current_user.username,
+            "sender_role": current_user.role,
             "message_type": message.message_type.value,
             "content": message.content,
             "timestamp": timestamp.isoformat(),
@@ -63,6 +64,7 @@ async def send_message(
             id=message_id,
             sender_id=current_user.id,
             sender_name=current_user.username,
+            sender_role=current_user.role,
             message_type=message.message_type,
             content=message.content,
             timestamp=timestamp,
@@ -116,6 +118,7 @@ async def upload_file_and_send(
             "id": message_id,
             "sender_id": current_user.id,
             "sender_name": current_user.username,
+            "sender_role": current_user.role,
             "message_type": message_type.value,
             "content": f"发送了文件: {file.filename}",
             "file_url": file_url,
@@ -136,6 +139,7 @@ async def upload_file_and_send(
             id=message_id,
             sender_id=current_user.id,
             sender_name=current_user.username,
+            sender_role=current_user.role,
             message_type=message_type,
             content=f"发送了文件: {file.filename}",
             file_url=file_url,
@@ -179,6 +183,7 @@ async def get_messages(
                     id=msg_data['id'],
                     sender_id=msg_data['sender_id'],
                     sender_name=msg_data['sender_name'],
+                    sender_role=msg_data.get('sender_role'),
                     message_type=MessageType(msg_data['message_type']),
                     content=msg_data['content'],
                     file_url=msg_data.get('file_url'),
@@ -255,8 +260,9 @@ async def create_room(
             "id": str(uuid.uuid4()),
             "sender_id": 0,
             "sender_name": "系统",
+            "sender_role": "system",
             "message_type": MessageType.SYSTEM.value,
-            "content": f"聊天室 '{room_name}' 已创建，{current_user.username} 加入了聊天室",
+            "content": f"聊天室 '{room_name}' 已创建，{current_user.username}({current_user.role}) 加入了聊天室",
             "timestamp": datetime.now().isoformat(),
             "room_id": room_id
         }
@@ -282,8 +288,9 @@ async def join_room(
             "id": str(uuid.uuid4()),
             "sender_id": 0,
             "sender_name": "系统",
+            "sender_role": "system",
             "message_type": MessageType.SYSTEM.value,
-            "content": f"{current_user.username} 加入了聊天室",
+            "content": f"{current_user.username}({current_user.role}) 加入了聊天室",
             "timestamp": datetime.now().isoformat(),
             "room_id": room_id
         }
@@ -309,8 +316,9 @@ async def leave_room(
             "id": str(uuid.uuid4()),
             "sender_id": 0,
             "sender_name": "系统",
+            "sender_role": "system",
             "message_type": MessageType.SYSTEM.value,
-            "content": f"{current_user.username} 离开了聊天室",
+            "content": f"{current_user.username}({current_user.role}) 离开了聊天室",
             "timestamp": datetime.now().isoformat(),
             "room_id": room_id
         }
@@ -342,6 +350,7 @@ async def get_rooms(current_user: UserResponse = Depends(get_current_user)):
                             id=msg_data['id'],
                             sender_id=msg_data['sender_id'],
                             sender_name=msg_data['sender_name'],
+                            sender_role=msg_data.get('sender_role'),
                             message_type=MessageType(msg_data['message_type']),
                             content=msg_data['content'],
                             timestamp=datetime.fromisoformat(msg_data['timestamp'])

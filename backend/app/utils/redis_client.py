@@ -41,8 +41,8 @@ class RedisClient:
             # 添加到在线用户集合
             pipeline.sadd("online_users", user_id)
             
-            # 设置过期时间（30分钟无活动自动下线）
-            pipeline.expire(f"user:online:{user_id}", 1800)
+            # 设置过期时间（1小时无活动自动下线）
+            pipeline.expire(f"user:online:{user_id}", 3600)
             
             pipeline.execute()
             
@@ -58,7 +58,7 @@ class RedisClient:
                 self.redis_client.hset(f"user:online:{user_id}", "login_time", str(current_time))
                 self.redis_client.hset(f"user:online:{user_id}", "last_activity", str(current_time))
                 self.redis_client.sadd("online_users", user_id)
-                self.redis_client.expire(f"user:online:{user_id}", 1800)
+                self.redis_client.expire(f"user:online:{user_id}", 3600)
                 print(f"使用回退方式成功设置用户 {user_id} 在线状态")
             except Exception as fallback_e:
                 print(f"回退方式也失败: {fallback_e}")
@@ -109,8 +109,8 @@ class RedisClient:
         try:
             if self.is_user_online(user_id):
                 self.redis_client.hset(f"user:online:{user_id}", "last_activity", str(time.time()))
-                # 重新设置过期时间
-                self.redis_client.expire(f"user:online:{user_id}", 1800)
+                # 重新设置过期时间（1小时）
+                self.redis_client.expire(f"user:online:{user_id}", 3600)
         except Exception as e:
             print(f"更新用户活动时间失败: {e}")
     
@@ -177,11 +177,87 @@ class RedisClient:
         """清理过期的在线用户"""
         try:
             online_user_ids = self.redis_client.smembers("online_users")
+            expired_users = []
+            
             for user_id in online_user_ids:
-                if not self.redis_client.exists(f"user:online:{user_id}"):
+                user_key = f"user:online:{user_id}"
+                
+                # 检查用户在线记录是否仍然存在
+                if not self.redis_client.exists(user_key):
+                    # 用户记录已过期，从在线用户集合中移除
                     self.redis_client.srem("online_users", user_id)
+                    expired_users.append(user_id)
+                    continue
+                
+                # 检查用户最后活动时间
+                user_info = self.redis_client.hgetall(user_key)
+                if user_info and 'last_activity' in user_info:
+                    try:
+                        last_activity = float(user_info['last_activity'])
+                        current_time = time.time()
+                        
+                        # 如果超过1小时无活动，手动设置用户离线
+                        if current_time - last_activity > 3600:
+                            self.set_user_offline(int(user_id))
+                            expired_users.append(user_id)
+                            print(f"用户 {user_id} 因超时无活动被自动下线")
+                    except (ValueError, TypeError):
+                        # 数据格式错误，清理该用户
+                        self.set_user_offline(int(user_id))
+                        expired_users.append(user_id)
+            
+            if expired_users:
+                print(f"清理了 {len(expired_users)} 个过期用户: {expired_users}")
+                
         except Exception as e:
             print(f"清理过期用户失败: {e}")
+    
+    def check_user_activity_timeout(self, user_id: int) -> bool:
+        """检查用户是否因无活动超时"""
+        try:
+            user_info = self.get_user_online_info(user_id)
+            if not user_info:
+                return True  # 用户不在线，视为超时
+            
+            current_time = time.time()
+            last_activity = user_info.get('last_activity', 0)
+            
+            # 超过1小时无活动
+            return current_time - last_activity > 3600
+            
+        except Exception as e:
+            print(f"检查用户活动超时失败: {e}")
+            return False
+    
+    def get_user_online_duration(self, user_id: int) -> dict:
+        """获取用户在线时长信息"""
+        try:
+            user_info = self.get_user_online_info(user_id)
+            if not user_info:
+                return {"online": False, "duration": 0, "remaining_time": 0}
+            
+            current_time = time.time()
+            login_time = user_info.get('login_time', current_time)
+            last_activity = user_info.get('last_activity', current_time)
+            
+            # 计算在线时长（秒）
+            online_duration = current_time - login_time
+            
+            # 计算剩余在线时间（1小时减去无活动时间）
+            inactive_duration = current_time - last_activity
+            remaining_time = max(0, 3600 - inactive_duration)
+            
+            return {
+                "online": True,
+                "online_duration": int(online_duration),
+                "inactive_duration": int(inactive_duration),
+                "remaining_time": int(remaining_time),
+                "will_expire_at": last_activity + 3600
+            }
+            
+        except Exception as e:
+            print(f"获取用户在线时长失败: {e}")
+            return {"online": False, "duration": 0, "remaining_time": 0}
     
     # ===== 聊天相关功能 =====
     
