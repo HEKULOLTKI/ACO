@@ -104,20 +104,7 @@
             </div>
           </div>
           
-    <!-- 确认按钮 -->
-    <div class="action-section" v-if="selectedRole">
-            <el-button
-              type="primary"
-              size="large"
-              :loading="loading"
-        class="tech-confirm-button"
-              @click="confirmSelection"
-            >
-        <span class="button-text">启动选择</span>
-        <div class="button-glow"></div>
-        <div class="button-particles"></div>
-            </el-button>
-    </div>
+
     
     <!-- 访问权限错误弹窗 -->
     <AccessDeniedDialog 
@@ -169,8 +156,8 @@ const roleOptions = [
     iconUrl: '/src/assets/image/网络工程师.png'
   },
   {
-    value: '系统架构师',
-    label: '系统架构师',
+    value: '系统架构设计师',
+    label: '系统架构设计师',
     description: '负责系统架构设计和技术选型决策',
     icon: Cpu,
     iconUrl: '/src/assets/image/系统架构工程师.png'
@@ -188,6 +175,13 @@ const roleOptions = [
     description: '负责安全日志审计',
     icon: Monitor,
     iconUrl: '/src/assets/image/系统分析师.png'
+  },
+  {
+    value: '孪生平台',
+    label: '孪生平台',
+    description: '访问数字孪生平台系统',
+    icon: DataAnalysis,
+    iconUrl: '/src/assets/image/孪生平台.png'
   }
 ]
 
@@ -212,6 +206,14 @@ const selectRole = (role: string) => {
     return
   }
   
+  // 如果选择孪生平台，任何人都可以选择，不需要权限验证
+  if (role === '孪生平台') {
+    selectedRole.value = role
+    // 发送JSON数据到用户的IP地址，但包含孪生平台地址信息
+    sendUserDataJson()
+    return
+  }
+  
   // 检查操作员是否有权限使用选中的角色
   if (currentUser.type === '操作员' && currentUser.role !== role) {
     accessDeniedMessage.value = `您无权限使用"${role}"角色，您的角色是"${currentUser.role}"`
@@ -220,6 +222,9 @@ const selectRole = (role: string) => {
   }
   
   selectedRole.value = role
+  
+  // 直接发送JSON文件
+  sendUserDataJson()
 }
 
 // 获取指示点位置
@@ -250,28 +255,14 @@ const getArrowPosition = () => {
   }
 }
 
-// 确认选择
-const confirmSelection = async () => {
-  if (!selectedRole.value) {
-    ElMessage.warning('请先选择一个角色')
-    return
-  }
-  
-  // 检查用户是否有权限使用该角色
+// 发送用户数据JSON
+const sendUserDataJson = async () => {
   const currentUser = authStore.user
   if (!currentUser) {
     ElMessage.error('用户信息获取失败，请重新登录')
-    router.push('/login')
     return
   }
-  
-  // 检查操作员是否有权限使用选中的角色
-  if (currentUser.type === '操作员' && currentUser.role !== selectedRole.value) {
-    accessDeniedMessage.value = `您无权限使用"${selectedRole.value}"角色，您的角色是"${currentUser.role}"`
-    showAccessDenied.value = true
-    return
-  }
-  
+
   loading.value = true
   try {
     // 模拟角色验证过程
@@ -310,10 +301,8 @@ const confirmSelection = async () => {
         
         if (userInfoResponse.status === 401) {
           console.warn('🔐 认证失败，可能是token已过期')
-          ElMessage.warning('登录状态已过期，请重新登录')
-          // 可选：自动重新登录或跳转到登录页
-          // router.push('/login')
-          // return
+          ElMessage.warning('登录状态已过期，但仍可使用角色选择功能')
+          // 不进行自动跳转，保持在角色选择界面
         }
         
         ElMessage.warning('获取用户信息失败，将使用默认配置')
@@ -328,57 +317,81 @@ const confirmSelection = async () => {
       }
     }
     
-    // 构建发送的用户信息数据
+    // 构建发送的数据
     const token = localStorage.getItem('token') || authStore.token
-    let userDataToSend = userCompleteInfo || {
-      action: 'user_data_sync',
-      sync_info: {
-        sync_type: 'fallback_user_export',
-        sync_time: new Date().toISOString(),
+    let userDataToSend
+    
+    // 如果选择的是孪生平台，只发送孪生平台地址信息
+    if (selectedRole.value === '孪生平台') {
+      userDataToSend = {
+        action: 'twin_platform_access',
+        twin_platform: {
+          url: 'http://172.17.10.100/',
+          ip: '172.17.10.100',
+          name: '数字孪生平台',
+          description: '数字孪生平台系统访问地址'
+        },
+        timestamp: new Date().toISOString(),
         operator: {
           user_id: currentUser.id,
           username: currentUser.username,
           operator_role: currentUser.role,
-          operator_type: currentUser.type,
-          token: token // 添加当前用户的token
-        },
-        session: {
-          ip_address: 'unknown',
-          user_agent: 'unknown',
-          login_time: Date.now() / 1000
-        },
-        data_source: {
-          database: 'user_management',
-          table: 'users',
-          version: '1.0',
-          environment: 'production'
+          operator_type: currentUser.type
         }
-      },
-      users: [
-        {
-          id: currentUser.id,
-          username: currentUser.username,
-          password: '123456', // 默认密码
-          role: currentUser.role,
-          type: currentUser.type,
-          status: currentUser.status,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      }
+      console.log('✅ 构建孪生平台地址信息JSON数据')
+    } else {
+      // 其他角色发送完整的用户数据
+      userDataToSend = userCompleteInfo || {
+        action: 'user_data_sync',
+        sync_info: {
+          sync_type: 'fallback_user_export',
+          sync_time: new Date().toISOString(),
+          operator: {
+            user_id: currentUser.id,
+            username: currentUser.username,
+            operator_role: currentUser.role,
+            operator_type: currentUser.type,
+            token: token // 添加当前用户的token
+          },
+          session: {
+            ip_address: 'unknown',
+            user_agent: 'unknown',
+            login_time: Date.now() / 1000
+          },
+          data_source: {
+            database: 'user_management',
+            table: 'users',
+            version: '1.0',
+            environment: 'production'
+          }
+        },
+        users: [
+          {
+            id: currentUser.id,
+            username: currentUser.username,
+            password: '123456', // 默认密码
+            role: currentUser.role,
+            type: currentUser.type,
+            status: currentUser.status,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ],
+        sync_summary: {
+          total_users: 1,
+          active_users: 1,
+          inactive_users: 0,
+          roles: [currentUser.role],
+          types: [currentUser.type],
+          sync_id: `sync_${Date.now()}`,
+          compression: 'none'
         }
-      ],
-      sync_summary: {
-        total_users: 1,
-        active_users: 1,
-        inactive_users: 0,
-        roles: [currentUser.role],
-        types: [currentUser.type],
-        sync_id: `sync_${Date.now()}`,
-        compression: 'none'
       }
     }
     
-    // 确保token始终被添加到发送的数据中
-    if (userDataToSend && userDataToSend.sync_info && userDataToSend.sync_info.operator) {
+    // 确保token始终被添加到发送的数据中（仅对完整用户数据）
+    if (selectedRole.value !== '孪生平台' && userDataToSend && userDataToSend.sync_info && userDataToSend.sync_info.operator) {
       userDataToSend.sync_info.operator.token = token
     }
     
@@ -388,14 +401,19 @@ const confirmSelection = async () => {
       ? `http://${userIP}:8800/upload`
       : 'http://127.0.0.1:8800/upload' // 备用地址
     
-    console.log('📤 准备发送用户信息数据:')
+    console.log('📤 准备发送数据:')
     console.log('   用户IP:', userIP)
     console.log('   目标地址:', targetUrl)
+    console.log('   数据类型:', selectedRole.value === '孪生平台' ? '孪生平台地址信息' : '完整用户数据')
     console.log('   数据大小:', JSON.stringify(userDataToSend).length, '字节')
-    console.log('   用户数量:', userDataToSend.users.length)
-    console.log('   包含Token:', token ? '是' : '否')
-    if (token) {
-      console.log('   Token前缀:', token.substring(0, 20) + '...')
+    if (selectedRole.value === '孪生平台') {
+      console.log('   孪生平台地址:', userDataToSend.twin_platform?.url)
+    } else {
+      console.log('   用户数量:', userDataToSend.users?.length || 0)
+      console.log('   包含Token:', token ? '是' : '否')
+      if (token) {
+        console.log('   Token前缀:', token.substring(0, 20) + '...')
+      }
     }
     
     try {
@@ -450,20 +468,29 @@ const confirmSelection = async () => {
       }
     }
     
-    ElMessage.success(`已切换到${selectedRole.value}角色`)
+    if (selectedRole.value === '孪生平台') {
+      ElMessage.success(`已发送孪生平台地址信息，即将退出系统`)
+    } else {
+      ElMessage.success(`已发送用户数据JSON文件，即将退出系统`)
+    }
     
     // 保存选中的角色到本地存储
     localStorage.setItem('selectedRole', selectedRole.value)
     
-    // 跳转到主页面
-    router.push('/dashboard')
+    // 延迟1.5秒后退出登录并返回登录界面
+    setTimeout(async () => {
+      await authStore.logoutAction()
+      router.push('/login')
+    }, 1500)
     
   } catch (error) {
-    ElMessage.error('角色切换失败，请重试')
+    ElMessage.error('发送用户数据失败，请重试')
   } finally {
     loading.value = false
   }
 }
+
+
 
 // 返回登录
 const goBack = async () => {
@@ -506,12 +533,7 @@ onMounted(() => {
     return
   }
   
-  // 如果是管理员，直接跳转到主页面
-  if (currentUser.type === '管理员') {
-    router.push('/dashboard')
-    return
-  }
-  
+  // 管理员也可以访问角色选择页面，不自动跳转
   // 如果是操作员但没有设置角色，需要选择角色
   if (currentUser.type === '操作员' && !currentUser.role) {
     ElMessage.info('请选择您的角色以继续使用系统')
@@ -620,11 +642,11 @@ onMounted(() => {
   animation: gridMove 30s linear infinite;
 }
 
-/* 顶部栏 - 炫酷科技样式 */
+/* 顶部栏 - 重新设计的炫酷科技样式 */
 .top-bar {
   position: relative;
   z-index: 100;
-  height: 80px;
+  height: 100px;
   overflow: hidden;
 }
 
@@ -636,18 +658,19 @@ onMounted(() => {
   height: 100%;
   background: linear-gradient(
     135deg,
-    rgba(0, 30, 60, 0.95) 0%,
-    rgba(0, 60, 120, 0.98) 30%,
-    rgba(0, 100, 200, 0.95) 50%,
-    rgba(0, 60, 120, 0.98) 70%,
-    rgba(0, 30, 60, 0.95) 100%
+    rgba(0, 20, 60, 0.98) 0%,
+    rgba(0, 40, 100, 0.99) 20%,
+    rgba(0, 60, 140, 0.98) 40%,
+    rgba(0, 80, 160, 0.99) 60%,
+    rgba(0, 60, 140, 0.98) 80%,
+    rgba(0, 20, 60, 0.98) 100%
   );
-  backdrop-filter: blur(15px);
-  border-bottom: 3px solid rgba(0, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  border-bottom: 4px solid rgba(0, 255, 255, 0.6);
   box-shadow: 
-    0 5px 30px rgba(0, 255, 255, 0.3),
-    inset 0 2px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -2px 0 rgba(0, 255, 255, 0.2);
+    0 8px 40px rgba(0, 255, 255, 0.4),
+    inset 0 3px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -3px 0 rgba(0, 255, 255, 0.3);
 }
 
 .top-bar-glow {
@@ -784,15 +807,29 @@ onMounted(() => {
 .title-text {
   position: relative;
   z-index: 2;
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 900;
   color: #ffffff;
   text-shadow: 
-    0 0 25px rgba(0, 255, 255, 1),
-    0 0 50px rgba(0, 255, 255, 0.6),
-    0 0 75px rgba(0, 255, 255, 0.3);
-  letter-spacing: 3px;
+    0 0 30px rgba(0, 255, 255, 1),
+    0 0 60px rgba(0, 255, 255, 0.8),
+    0 0 90px rgba(0, 255, 255, 0.4),
+    0 0 120px rgba(0, 255, 255, 0.2);
+  letter-spacing: 4px;
   animation: titleTextGlow 4s ease-in-out infinite alternate;
+  background: linear-gradient(
+    45deg,
+    #ffffff,
+    #00ffff,
+    #ffffff,
+    #00ffff
+  );
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: titleTextGlow 4s ease-in-out infinite alternate,
+            titleGradient 6s ease-in-out infinite;
 }
 
 .title-decorations {
@@ -1122,9 +1159,9 @@ onMounted(() => {
   height: 100%;
   background: linear-gradient(
     145deg,
-    rgba(15, 30, 60, 0.9),
-    rgba(30, 60, 120, 0.8),
-    rgba(15, 30, 60, 0.9)
+    rgba(0, 30, 80, 0.95),
+    rgba(0, 50, 120, 0.9),
+    rgba(0, 30, 80, 0.95)
   );
   border-radius: 8px;
   border: 2px solid rgba(0, 255, 255, 0.3);
@@ -1236,6 +1273,8 @@ onMounted(() => {
   text-shadow: 0 0 25px rgba(0, 255, 255, 1);
   animation: textGlow 1.5s ease-in-out infinite alternate;
 }
+
+
 
 .card-base {
   position: absolute;
@@ -1432,6 +1471,13 @@ onMounted(() => {
 @keyframes iconRingPulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes titleGradient {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
 }
 
 

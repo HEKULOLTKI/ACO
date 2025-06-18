@@ -227,7 +227,7 @@ const handleSettings = () => {
     "header header"
     "sidebar main";
   grid-template-columns: 280px 1fr;
-  grid-template-rows: 64px 1fr;
+  grid-template-rows: 80px 1fr;
   height: 100vh;
   width: 100vw;
   background: #f5f7fa;
@@ -242,7 +242,7 @@ const handleSettings = () => {
   padding: 0 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 1000;
-  height: 64px;
+  height: 80px;
 }
 
 .header-left {
@@ -591,7 +591,7 @@ const handleSettings = () => {
       "header"
       "main";
     grid-template-columns: 1fr;
-    grid-template-rows: 64px 1fr;
+    grid-template-rows: 80px 1fr;
   }
   
   .layout-sidebar {

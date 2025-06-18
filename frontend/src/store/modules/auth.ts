@@ -101,7 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
       const rolePermissions: Record<string, string[]> = {
         '系统分析师': ['user:read', 'device:read', 'task:read'],
         '网络工程师': ['device:all', 'task:read'],
-        '系统架构工程师': ['task:manage', 'device:all'],
+        '系统架构设计师': ['task:manage', 'device:all'],
         '数据运维工程师': ['task:manage', 'desktop:manage', 'device:all'],
         '孪生平台': ['desktop:manage', 'task:read', 'device:read']
       }

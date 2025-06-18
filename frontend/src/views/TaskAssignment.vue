@@ -20,7 +20,7 @@
                 >
                   <el-option label="全部任务" value="" />
                   <el-option label="网络规划设计师" value="网络规划设计师" />
-                  <el-option label="系统架构师" value="系统架构师" />
+                  <el-option label="系统架构设计师" value="系统架构设计师" />
                   <el-option label="系统规划与管理师" value="系统规划与管理师" />
                   <el-option label="系统分析师" value="系统分析师" />
                 </el-select>
@@ -43,11 +43,6 @@
               <el-table-column prop="name" label="任务名称" min-width="160" show-overflow-tooltip />
               <el-table-column prop="type" label="任务类型" width="120" />
               <el-table-column prop="phase" label="阶段任务" width="120" />
-              <el-table-column prop="status" label="任务状态" width="100">
-                <template #default="{ row }">
-                  <el-tag :type="getStatusType(row.status || '未分配')">{{ row.status || '未分配' }}</el-tag>
-                </template>
-              </el-table-column>
             </el-table>
             
             <!-- 批量操作提示 -->
@@ -245,9 +240,9 @@ const loadAvailableTasks = async () => {
   loading.value = true
   try {
     const response = await getTasks()
-    // 过滤掉已完成的任务，只显示可分配的任务
+    // 只显示未分配的任务
     availableTasks.value = response.data?.filter(task => 
-      task.status !== '已完成' && task.status !== '已取消'
+      task.status === '未分配' || !task.status
     ) || []
   } catch (error: any) {
     const errorMsg = error?.response?.data?.detail || error?.message || '加载可用任务失败'
@@ -436,7 +431,7 @@ onMounted(() => {
     padding: 14px;
 
     .left-panel {
-      width: 60%;
+      width: 55%;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -462,20 +457,20 @@ onMounted(() => {
           height: 100%;
           position: relative;
 
-          .batch-info {
+                      .batch-info {
             position: absolute;
             bottom: 8px;
             left: 8px;
             right: 8px;
-            background: #e6f7ff;
-            border: 1px solid #91d5ff;
+            background: #e6f3ff;
+            border: 1px solid #66b3ff;
             border-radius: 4px;
             padding: 8px 14px;
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 13px;
-            color: #1890ff;
+            color: #0066cc;
             z-index: 10;
 
             .el-icon {
@@ -485,7 +480,7 @@ onMounted(() => {
             .el-button--text {
               padding: 0;
               margin-left: auto;
-              color: #1890ff;
+              color: #0066cc;
               font-size: 14px;
             }
           }
@@ -554,7 +549,7 @@ onMounted(() => {
                   background: #f8f9fa;
                   padding: 6px 10px;
                   border-radius: 4px;
-                  border-left: 3px solid #409eff;
+                  border-left: 3px solid #0066cc;
                   min-height: 20px;
                   display: flex;
                   align-items: center;
@@ -585,7 +580,7 @@ onMounted(() => {
     }
 
     .right-panel {
-      width: 40%;
+      width: 45%;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -646,10 +641,11 @@ onMounted(() => {
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                padding: 8px 10px;
+                padding: 10px 12px;
                 cursor: pointer;
                 border-bottom: 1px solid #f0f0f0;
                 font-size: 15px;
+                min-height: 50px;
 
                 &:hover {
                   background: #f5f7fa;
@@ -657,22 +653,32 @@ onMounted(() => {
 
                 .user-card-inline {
                   flex: 1;
-                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  background: linear-gradient(135deg, #003366 0%, #0066cc 100%);
                   border-radius: 6px;
-                  padding: 4px 8px;
+                  padding: 8px 12px;
                   color: white;
+                  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.3);
+                  min-height: 36px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
                   
                   .user-display {
                     font-weight: 600;
-                    font-size: 14px;
+                    font-size: 12px;
                     text-align: center;
-                    line-height: 1.3;
+                    line-height: 1.2;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 100%;
+                    letter-spacing: -0.2px;
                   }
                 }
 
-                &.selected {
-                  background: #e6f7ff;
-                  border-color: #91d5ff;
+                              &.selected {
+                background: #e6f3ff;
+                border-color: #66b3ff;
                   justify-content: space-between;
                   
                   .user-card-inline {
@@ -704,7 +710,7 @@ onMounted(() => {
               }
 
               &.selected {
-                background: #f0f9ff;
+                background: #e6f3ff;
               }
 
               .empty-state {
@@ -782,7 +788,7 @@ onMounted(() => {
 }
 
 :deep(.el-table__body tr.current-row > td) {
-  background-color: #ecf5ff;
+  background-color: #e6f3ff;
 }
 
 :deep(.el-table .el-table__body td) {
@@ -790,18 +796,18 @@ onMounted(() => {
 }
 
 :deep(.transfer-btn.el-button--primary) {
-  background-color: #409eff;
-  border-color: #409eff;
+  background-color: #0066cc;
+  border-color: #0066cc;
   color: white;
   
   &:hover:not(:disabled) {
-    background-color: #66b1ff;
-    border-color: #66b1ff;
+    background-color: #0080ff;
+    border-color: #0080ff;
   }
   
   &:disabled {
-    background-color: #a0cfff;
-    border-color: #a0cfff;
+    background-color: #66b3ff;
+    border-color: #66b3ff;
     color: white;
     cursor: not-allowed;
   }

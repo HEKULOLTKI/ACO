@@ -219,7 +219,7 @@ const imageList = reactive([
     imageGroup: 'windows'
   },
   {
-    name: '系统架构师',
+    name: '系统架构设计师',
     system: 'windows10 64bit',
     systemDisplayName: 'Windows 10',
     systemDiskUsage: '12.8GB/120.0GB',

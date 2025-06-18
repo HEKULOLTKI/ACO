@@ -213,7 +213,7 @@ const securityFormRef = ref<FormInstance>()
 const userInfo = ref<UserInfo>({
   id: 1,
   username: 'admin',
-  role: '系统架构师',
+          role: '系统架构设计师',
   type: '管理员',
   status: 'active',
   created_at: '2024-01-10 10:30:00'
@@ -271,7 +271,7 @@ const getRoleType = (role: string) => {
   switch (role) {
     case '网络规划设计师':
       return 'primary'
-    case '系统架构师':
+          case '系统架构设计师':
       return 'success'
     case '系统规划与管理师':
       return 'warning'

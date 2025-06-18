@@ -216,7 +216,7 @@ const loginFormRef = ref<FormInstance>()
 const loginForm = reactive<LoginForm>({
   username: '',
   password: '',
-  loginType: '管理员'
+  loginType: '操作员'
 })
 
 // 角色选项

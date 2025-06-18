@@ -66,7 +66,7 @@ export const USER_TYPE_OPTIONS = [
 // 用户角色选项
 export const USER_ROLE_OPTIONS = [
   { label: '网络规划设计师', value: '网络规划设计师' },
-  { label: '系统架构师', value: '系统架构师' },
+  { label: '系统架构设计师', value: '系统架构设计师' },
   { label: '系统规划与管理师', value: '系统规划与管理师' },
   { label: '系统分析师', value: '系统分析师' }
 ] as const

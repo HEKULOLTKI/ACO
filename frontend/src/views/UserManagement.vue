@@ -30,7 +30,7 @@
           <el-form-item label="角色">
             <el-select v-model="searchForm.role" placeholder="选择角色" clearable>
               <el-option label="网络规划设计师" value="网络规划设计师" />
-              <el-option label="系统架构师" value="系统架构师" />
+              <el-option label="系统架构设计师" value="系统架构设计师" />
               <el-option label="系统规划与管理师" value="系统规划与管理师" />
               <el-option label="系统分析师" value="系统分析师" />
             </el-select>
@@ -134,7 +134,7 @@
         <el-form-item label="角色" prop="role">
           <el-select v-model="userForm.role" placeholder="选择角色" style="width: 100%">
             <el-option label="网络规划设计师" value="网络规划设计师" />
-            <el-option label="系统架构师" value="系统架构师" />
+            <el-option label="系统架构设计师" value="系统架构设计师" />
             <el-option label="系统规划与管理师" value="系统规划与管理师" />
             <el-option label="系统分析师" value="系统分析师" />
           </el-select>
@@ -367,7 +367,7 @@ const getRoleType = (role: string) => {
   switch (role) {
     case '网络规划设计师':
       return 'primary'
-    case '系统架构师':
+          case '系统架构设计师':
       return 'success'
     case '系统规划与管理师':
       return 'warning'
@@ -402,7 +402,7 @@ const loadUsers = async () => {
       {
         id: 1,
         username: 'admin',
-        role: '系统架构师',
+        role: '系统架构设计师',
         type: '管理员',
         status: 'active',
         created_at: '2024-01-15 10:30',
@@ -565,7 +565,7 @@ const downloadTemplate = async () => {
       const excelData = [
         ['用户名', '密码', '角色', '用户类型', '状态', '照片路径'],
         ['user1', '123456', '网络规划设计师', '操作员', 'active', '/images/user1.jpg'],
-        ['user2', '123456', '系统架构师', '操作员', 'active', '/images/user2.jpg'],
+        ['user2', '123456', '系统架构设计师', '操作员', 'active', '/images/user2.jpg'],
         ['user3', '123456', '系统规划与管理师', '管理员', 'active', '/images/user3.jpg'],
         ['zhao_liu', '123456', '系统分析师', '操作员', 'active', '/images/zhao_liu.jpg']
       ]

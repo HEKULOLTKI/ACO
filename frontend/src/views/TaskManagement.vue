@@ -46,7 +46,7 @@
           <el-form-item label="绑定角色">
             <el-select v-model="searchForm.role_binding" placeholder="选择绑定角色" clearable>
               <el-option label="网络规划设计师" value="网络规划设计师" />
-              <el-option label="系统架构师" value="系统架构师" />
+              <el-option label="系统架构设计师" value="系统架构设计师" />
               <el-option label="系统规划与管理师" value="系统规划与管理师" />
               <el-option label="系统分析师" value="系统分析师" />
             </el-select>
@@ -162,7 +162,7 @@
             clearable
           >
             <el-option label="网络规划设计师" value="网络规划设计师" />
-            <el-option label="系统架构师" value="系统架构师" />
+            <el-option label="系统架构设计师" value="系统架构设计师" />
             <el-option label="系统规划与管理师" value="系统规划与管理师" />
             <el-option label="系统分析师" value="系统分析师" />
           </el-select>
@@ -547,7 +547,7 @@ const downloadTemplate = async () => {
     const csvData = [
       ['任务名称', '任务类型', '阶段', '任务描述', '绑定角色'],
       ['网络架构设计', '网络搭建任务', '计划阶段', '设计企业网络拓扑结构和配置方案', '网络规划设计师'],
-      ['服务器环境搭建', '系统构建任务', '执行阶段', '搭建生产环境服务器和应用系统', '系统架构师'],
+      ['服务器环境搭建', '系统构建任务', '执行阶段', '搭建生产环境服务器和应用系统', '系统架构设计师'],
       ['监控系统配置', '运维监管任务', '配置阶段', '配置系统监控和告警机制', '系统规划与管理师'],
       ['日志安全审计', '日志安全任务', '监控阶段', '分析系统日志并识别安全威胁', '系统分析师']
     ]

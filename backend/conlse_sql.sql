@@ -169,7 +169,7 @@ CREATE TABLE `users`  (
 -- Records of users
 -- ----------------------------
 INSERT INTO `users` VALUES (1, 'admin', '$2b$12$xxkbO0RDZWFFjTN7nvT4e.qWYd9MlJPYvqjZp8K./JK3Bq40anvzq', '管理员', '管理员', 'active', NULL, '2025-06-14 03:59:05', '2025-06-14 03:59:05');
-INSERT INTO `users` VALUES (7, 'user2', '$2b$12$2ovFOSUky0/jls4hrS6cDOT4jymxt1LOUqIFfMabFXLIyT1OYaryy', '系统架构师', '操作员', 'active', NULL, '2025-06-14 05:52:58', '2025-06-14 05:52:58');
+INSERT INTO `users` VALUES (7, 'user2', '$2b$12$2ovFOSUky0/jls4hrS6cDOT4jymxt1LOUqIFfMabFXLIyT1OYaryy', '系统架构设计师', '操作员', 'active', NULL, '2025-06-14 05:52:58', '2025-06-14 05:52:58');
 INSERT INTO `users` VALUES (6, 'user1', '$2b$12$E5PKmFH12Yh2m5/VjG2foeQt.VRx6JU.hk8yeb3LrlrhobXg/DGs2', '网络工程师', '操作员', 'active', NULL, '2025-06-14 05:31:42', '2025-06-14 05:31:42');
 INSERT INTO `users` VALUES (5, 'user3', '$2b$12$O/nneEjY52QmDNEQcvG/gOAJFr5bHLI458kqOroxA83iHSJaFajHq', '系统规划与管理师', '操作员', 'active', NULL, '2025-06-14 05:26:04', '2025-06-14 05:26:04');
 

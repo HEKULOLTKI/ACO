@@ -425,7 +425,7 @@ async def download_user_template():
     # 添加示例数据
     sample_data = [
         ['user1', '123456', '网络工程师', '操作员', 'active', '/images/user1.jpg'],
-        ['user2', '123456', '系统架构师', '操作员', 'active', '/images/user2.jpg'],
+        ['user2', '123456', '系统架构设计师', '操作员', 'active', '/images/user2.jpg'],
         ['user3', '123456', '系统规划与管理师', '管理员', 'active', '/images/user3.jpg']
     ]
     

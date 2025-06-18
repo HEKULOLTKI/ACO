@@ -155,12 +155,8 @@ router.beforeEach(async (to, from, next) => {
   
   // 不需要认证的页面直接放行
   if (!to.meta.requiresAuth) {
-    // 如果已登录且访问登录页，重定向到仪表板
-    if (to.name === 'Login' && authStore.isAuthenticated) {
-      next('/dashboard')
-    } else {
-      next()
-    }
+    // 允许已登录用户访问登录页，不自动重定向
+    next()
     return
   }
 
@@ -195,15 +191,7 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 特殊处理：操作员访问角色选择页面
-  if (to.name === 'RoleSelection') {
-    const user = authStore.user
-    if (user && user.type === '管理员') {
-      // 管理员不需要角色选择，直接跳转到主页
-      next('/dashboard')
-      return
-    }
-  }
+  // 允许所有已认证用户访问角色选择页面
 
   // 特殊处理：操作员登录后需要先选择角色
   if (to.name !== 'RoleSelection' && to.meta.requiresAuth) {
