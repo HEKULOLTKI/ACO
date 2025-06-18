@@ -5,7 +5,8 @@ import asyncio
 from datetime import datetime
 from app.config import settings
 from app.database import create_tables
-from app.api import auth, user, task, device, system, chat
+from app.api import auth, user, task, device, desktop, system, chat
+from app.api import knowledge
 from app.middleware.user_activity import UserActivityMiddleware
 
 # 创建FastAPI应用实例
@@ -30,12 +31,14 @@ app.add_middleware(
 app.add_middleware(UserActivityMiddleware)
 
 # 包含API路由
-app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
+app.include_router(auth.router, prefix="/api/auth", tags=["用户认证"])
 app.include_router(user.router, prefix="/api", tags=["用户管理"])
 app.include_router(task.router, prefix="/api", tags=["任务管理"])
 app.include_router(device.router, prefix="/api", tags=["设备管理"])
+app.include_router(desktop.router, tags=["桌面管理"])
 app.include_router(system.router, prefix="/api/system", tags=["系统管理"])
 app.include_router(chat.router, prefix="/api/chat", tags=["在线聊天"])
+app.include_router(knowledge.router, tags=["知识库"])
 
 # 挂载静态文件目录
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_PATH), name="uploads")

@@ -111,6 +111,16 @@ const routes = [
         }
       },
       {
+        path: '/knowledge',
+        name: 'KnowledgeManagement',
+        component: () => import('@/views/KnowledgeManagement.vue'),
+        meta: { 
+          requiresAuth: true,
+          requiresAdmin: true,
+          title: 'AI知识库管理'
+        }
+      },
+      {
         path: '/profile',
         name: 'UserProfile',
         component: () => import('@/views/UserProfile.vue'),

@@ -146,6 +146,16 @@
           <img src="@/assets/icon/系统参数.png" alt="系统设置" class="nav-icon-img" />
           <span class="nav-text">系统设置</span>
         </div>
+        
+        <div 
+          class="nav-item" 
+          :class="{ active: $route.path === '/knowledge' }" 
+          @click="$router.push('/knowledge')"
+          v-if="userStore.isAdmin"
+        >
+          <img src="@/assets/icon/组 3000.png" alt="AI知识库" class="nav-icon-img" />
+          <span class="nav-text">AI知识库</span>
+        </div>
       </nav>
     </aside>
 
