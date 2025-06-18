@@ -42,7 +42,7 @@ class ToolboxToolBase(BaseModel):
 
 class ToolboxToolCreate(ToolboxToolBase):
     """工具箱工具创建模式"""
-    user_id: Optional[int] = None
+    pass
 
 class ToolboxToolUpdate(BaseModel):
     """工具箱工具更新模式"""
@@ -53,7 +53,6 @@ class ToolboxToolUpdate(BaseModel):
 class ToolboxToolResponse(ToolboxToolBase):
     """工具箱工具响应模式"""
     id: int
-    user_id: Optional[int] = None
-    created_at: datetime
+    create_time: datetime
     
     model_config = ConfigDict(from_attributes=True) 

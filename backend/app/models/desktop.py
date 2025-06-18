@@ -31,12 +31,8 @@ class ToolboxTool(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, comment="工具名称")
     command = Column(Text, comment="执行命令")
-    icon = Column(Text, comment="图标数据")
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), comment="用户ID")
-    created_at = Column(TIMESTAMP, server_default=func.now(), comment="创建时间")
-    
-    # 关联关系
-    user = relationship("User", back_populates="toolbox_tools")
+    icon = Column(String(255), comment="图标数据")
+    create_time = Column(TIMESTAMP, server_default=func.now(), comment="创建时间")
     
     def __repr__(self):
         return f"<ToolboxTool(id={self.id}, name='{self.name}')>" 

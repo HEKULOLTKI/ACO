@@ -16,6 +16,6 @@ __all__ = [
     "TaskAssignment", 
     "Device",
     "DesktopItem",
-    "ToolboxTool",
+    "ToolboxTool",  # 注意：ToolboxTool已移除user_id外键关联
     "SystemSettings"
 ] 

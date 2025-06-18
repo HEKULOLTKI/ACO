@@ -20,7 +20,6 @@ class User(Base):
     # 关联关系
     task_assignments = relationship("TaskAssignment", back_populates="user")
     desktop_items = relationship("DesktopItem", back_populates="user")
-    toolbox_tools = relationship("ToolboxTool", back_populates="user")
     knowledge_bases = relationship("KnowledgeBase", back_populates="creator")
     
     def __repr__(self):
