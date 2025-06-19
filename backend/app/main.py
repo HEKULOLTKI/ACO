@@ -8,6 +8,7 @@ from app.database import create_tables
 from app.api import auth, user, task, device, desktop, system, chat
 from app.api import knowledge
 from app.middleware.user_activity import UserActivityMiddleware
+import os
 
 # 创建FastAPI应用实例
 app = FastAPI(
@@ -30,6 +31,13 @@ app.add_middleware(
 # 添加用户活跃状态中间件
 app.add_middleware(UserActivityMiddleware)
 
+# 确保上传目录存在
+os.makedirs("uploads/chat", exist_ok=True)
+os.makedirs("uploads/progress_reports", exist_ok=True)
+
+# 挂载静态文件目录
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 # 包含API路由
 app.include_router(auth.router, prefix="/api/auth", tags=["用户认证"])
 app.include_router(user.router, prefix="/api", tags=["用户管理"])
@@ -39,9 +47,6 @@ app.include_router(desktop.router, tags=["桌面管理"])
 app.include_router(system.router, prefix="/api/system", tags=["系统管理"])
 app.include_router(chat.router, prefix="/api/chat", tags=["在线聊天"])
 app.include_router(knowledge.router, tags=["知识库"])
-
-# 挂载静态文件目录
-app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_PATH), name="uploads")
 
 # 后台定时任务
 async def cleanup_expired_users_task():
@@ -65,7 +70,6 @@ async def cleanup_expired_users_task():
 async def startup_event():
     """应用启动事件"""
     from app.utils.redis_client import redis_client
-    import os
     
     create_tables()
     
@@ -86,15 +90,6 @@ async def startup_event():
         
     else:
         print("❌ Redis连接失败，用户在线状态功能可能不可用")
-    
-    # 确保上传目录存在
-    upload_dirs = [
-        settings.UPLOAD_PATH,
-        os.path.join(settings.UPLOAD_PATH, "chat")
-    ]
-    for upload_dir in upload_dirs:
-        os.makedirs(upload_dir, exist_ok=True)
-    print("✅ 上传目录初始化完成")
     
     print(f"🚀 {settings.PROJECT_NAME} 已启动")
     print(f"📖 API文档: http://localhost:8000/docs")

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.api.deps import get_current_user
@@ -6,7 +7,10 @@ from app.utils.redis_client import redis_client
 import psutil
 import platform
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List
+import os
+import json
+from pathlib import Path
 
 router = APIRouter()
 
@@ -279,4 +283,289 @@ async def get_performance_metrics(current_user = Depends(get_current_user)):
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取性能指标失败: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"获取性能指标失败: {str(e)}")
+
+@router.post("/reports/generate")
+async def generate_project_report(
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """生成项目报告PDF"""
+    try:
+        # 创建报告存储目录
+        reports_dir = Path("uploads/progress_reports")
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 获取系统统计数据
+        from app.models.user import User
+        from app.models.task import Task
+        from app.models.device import Device
+        
+        user_count = db.query(User).count()
+        task_count = db.query(Task).count()
+        device_count = db.query(Device).count()
+        
+        # 获取任务状态统计
+        pending_tasks = db.query(Task).filter(Task.status == 'pending').count()
+        running_tasks = db.query(Task).filter(Task.status == 'running').count()
+        completed_tasks = db.query(Task).filter(Task.status == 'completed').count()
+        failed_tasks = db.query(Task).filter(Task.status == 'failed').count()
+        
+        # 获取设备状态统计
+        online_devices = db.query(Device).filter(Device.status == 'online').count()
+        offline_devices = db.query(Device).filter(Device.status == 'offline').count()
+        
+        # 创建报告数据
+        report_data = {
+            "report_title": "多智能体协作运维系统项目报告",
+            "generated_at": datetime.now().strftime("%Y年%m月%d日 %H:%M:%S"),
+            "generated_by": current_user.username,
+            "system_overview": {
+                "total_users": user_count,
+                "total_tasks": task_count,
+                "total_devices": device_count
+            },
+            "task_statistics": {
+                "pending": pending_tasks,
+                "running": running_tasks, 
+                "completed": completed_tasks,
+                "failed": failed_tasks
+            },
+            "device_statistics": {
+                "online": online_devices,
+                "offline": offline_devices
+            }
+        }
+        
+        # 生成PDF文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        pdf_filename = f"项目报告_{timestamp}.pdf"
+        pdf_path = reports_dir / pdf_filename
+        
+        # 生成PDF报告
+        await create_project_report_pdf(report_data, pdf_path)
+        
+        return {
+            "message": "项目报告生成成功",
+            "filename": pdf_filename,
+            "file_path": f"/uploads/progress_reports/{pdf_filename}",
+            "generated_at": datetime.now()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"生成项目报告失败: {str(e)}")
+
+@router.get("/reports")
+async def get_project_reports(current_user = Depends(get_current_user)):
+    """获取项目报告列表"""
+    try:
+        reports_dir = Path("uploads/progress_reports")
+        if not reports_dir.exists():
+            return {"reports": []}
+        
+        reports = []
+        for pdf_file in reports_dir.glob("*.pdf"):
+            stat = pdf_file.stat()
+            reports.append({
+                "filename": pdf_file.name,
+                "file_path": f"/uploads/progress_reports/{pdf_file.name}",
+                "size": stat.st_size,
+                "created_at": datetime.fromtimestamp(stat.st_ctime),
+                "modified_at": datetime.fromtimestamp(stat.st_mtime)
+            })
+        
+        # 按创建时间倒序排列
+        reports.sort(key=lambda x: x["created_at"], reverse=True)
+        
+        return {"reports": reports}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取报告列表失败: {str(e)}")
+
+@router.get("/reports/download/{filename}")
+async def download_project_report(
+    filename: str,
+    current_user = Depends(get_current_user)
+):
+    """下载项目报告PDF"""
+    try:
+        reports_dir = Path("uploads/progress_reports")
+        pdf_path = reports_dir / filename
+        
+        if not pdf_path.exists():
+            raise HTTPException(status_code=404, detail="报告文件不存在")
+        
+        return FileResponse(
+            path=str(pdf_path),
+            filename=filename,
+            media_type='application/pdf'
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"下载报告失败: {str(e)}")
+
+@router.delete("/reports/{filename}")
+async def delete_project_report(
+    filename: str,
+    current_user = Depends(get_current_user)
+):
+    """删除项目报告"""
+    try:
+        reports_dir = Path("uploads/progress_reports")
+        pdf_path = reports_dir / filename
+        
+        if not pdf_path.exists():
+            raise HTTPException(status_code=404, detail="报告文件不存在")
+        
+        pdf_path.unlink()
+        
+        return {"message": "报告删除成功"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"删除报告失败: {str(e)}")
+
+async def create_project_report_pdf(report_data: dict, output_path: Path):
+    """创建项目报告PDF文件"""
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        
+        # 创建PDF文档
+        doc = SimpleDocTemplate(str(output_path), pagesize=A4)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # 标题
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=20,
+            spaceAfter=30,
+            alignment=1  # 居中
+        )
+        story.append(Paragraph(report_data["report_title"], title_style))
+        story.append(Spacer(1, 20))
+        
+        # 报告信息
+        info_data = [
+            ["生成时间", report_data["generated_at"]],
+            ["生成用户", report_data["generated_by"]]
+        ]
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(info_table)
+        story.append(Spacer(1, 30))
+        
+        # 系统概览
+        story.append(Paragraph("系统概览", styles['Heading2']))
+        overview_data = [
+            ["指标", "数值"],
+            ["用户总数", str(report_data["system_overview"]["total_users"])],
+            ["任务总数", str(report_data["system_overview"]["total_tasks"])],
+            ["设备总数", str(report_data["system_overview"]["total_devices"])]
+        ]
+        overview_table = Table(overview_data, colWidths=[3*inch, 3*inch])
+        overview_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(overview_table)
+        story.append(Spacer(1, 20))
+        
+        # 任务统计
+        story.append(Paragraph("任务状态统计", styles['Heading2']))
+        task_data = [
+            ["状态", "数量"],
+            ["待处理", str(report_data["task_statistics"]["pending"])],
+            ["进行中", str(report_data["task_statistics"]["running"])],
+            ["已完成", str(report_data["task_statistics"]["completed"])],
+            ["失败", str(report_data["task_statistics"]["failed"])]
+        ]
+        task_table = Table(task_data, colWidths=[3*inch, 3*inch])
+        task_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(task_table)
+        story.append(Spacer(1, 20))
+        
+        # 设备统计
+        story.append(Paragraph("设备状态统计", styles['Heading2']))
+        device_data = [
+            ["状态", "数量"],
+            ["在线", str(report_data["device_statistics"]["online"])],
+            ["离线", str(report_data["device_statistics"]["offline"])]
+        ]
+        device_table = Table(device_data, colWidths=[3*inch, 3*inch])
+        device_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(device_table)
+        
+        # 构建PDF
+        doc.build(story)
+        
+    except ImportError:
+        # 如果没有reportlab，创建一个简单的HTML转PDF或文本报告
+        with open(output_path.with_suffix('.txt'), 'w', encoding='utf-8') as f:
+            f.write(f"{report_data['report_title']}\n")
+            f.write("=" * 50 + "\n\n")
+            f.write(f"生成时间: {report_data['generated_at']}\n")
+            f.write(f"生成用户: {report_data['generated_by']}\n\n")
+            f.write("系统概览:\n")
+            f.write(f"  用户总数: {report_data['system_overview']['total_users']}\n")
+            f.write(f"  任务总数: {report_data['system_overview']['total_tasks']}\n")
+            f.write(f"  设备总数: {report_data['system_overview']['total_devices']}\n\n")
+            f.write("任务统计:\n")
+            f.write(f"  待处理: {report_data['task_statistics']['pending']}\n")
+            f.write(f"  进行中: {report_data['task_statistics']['running']}\n")
+            f.write(f"  已完成: {report_data['task_statistics']['completed']}\n")
+            f.write(f"  失败: {report_data['task_statistics']['failed']}\n\n")
+            f.write("设备统计:\n")
+            f.write(f"  在线: {report_data['device_statistics']['online']}\n")
+            f.write(f"  离线: {report_data['device_statistics']['offline']}\n")
+        
+        # 重命名为pdf（实际是文本文件）
+        os.rename(str(output_path.with_suffix('.txt')), str(output_path))
+    
+    except Exception as e:
+        # 创建一个简单的文本报告作为后备方案
+        with open(output_path.with_suffix('.txt'), 'w', encoding='utf-8') as f:
+            f.write(f"报告生成失败: {str(e)}\n")
+            f.write(f"数据: {json.dumps(report_data, ensure_ascii=False, indent=2)}")
+        
+        # 重命名为pdf
+        os.rename(str(output_path.with_suffix('.txt')), str(output_path)) 

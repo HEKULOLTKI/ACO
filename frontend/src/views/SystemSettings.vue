@@ -199,6 +199,8 @@
         </el-card>
       </el-col>
     </el-row>
+
+
   </div>
 </template>
 
@@ -346,7 +348,7 @@ const restartSystem = async () => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'danger',
+        type: 'error',
       }
     )
     
@@ -407,6 +409,8 @@ const refreshLogs = () => {
   loadSystemLogs()
 }
 
+
+
 onMounted(() => {
   loadSystemLogs()
 })
@@ -418,6 +422,13 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .search-bar {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 4px;
   }
 
   .status-grid {
@@ -456,7 +467,22 @@ onMounted(() => {
     gap: 15px;
 
     .el-button {
-      justify-self: stretch;
+      height: 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+    }
+  }
+
+
+}
+
+@media (max-width: 768px) {
+  .system-settings {
+    .maintenance-actions {
+      grid-template-columns: 1fr;
     }
   }
 }

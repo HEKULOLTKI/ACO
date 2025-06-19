@@ -4,6 +4,24 @@
       <template #header>
         <div class="card-header">
           <span>{{ authStore.isAdmin ? '全部任务进度' : '我的任务进度' }}</span>
+          <div class="header-actions">
+            <el-button 
+              type="success" 
+              @click="generateReport"
+              :loading="loading.generateReport"
+            >
+              <el-icon><Document /></el-icon>
+              生成项目报告
+            </el-button>
+            <el-button 
+              type="primary" 
+              @click="showReportList"
+              :loading="loading.reportList"
+            >
+              <el-icon><View /></el-icon>
+              查看报告列表
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -118,7 +136,7 @@
 
       <!-- 任务进度表格 -->
       <div class="progress-table">
-        <el-table :data="progressList" v-loading="loading" style="width: 100%">
+        <el-table :data="progressList" v-loading="loading.data" style="width: 100%">
           <el-table-column prop="id" label="ID" width="60" />
           <el-table-column prop="task_name" label="任务名称" min-width="150" />
           <el-table-column prop="task_type" label="任务类型" width="120" />
@@ -335,23 +353,152 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 项目报告列表对话框 -->
+    <el-dialog
+      v-model="reportDialogVisible"
+      title="项目报告列表"
+      width="70%"
+      :close-on-click-modal="false"
+    >
+      <div class="report-dialog-content">
+        <div class="dialog-header">
+          <span>已生成的项目报告</span>
+          <el-button 
+            type="primary" 
+            size="small" 
+            @click="generateReport"
+            :loading="loading.generateReport"
+          >
+            <el-icon><Document /></el-icon>
+            生成新报告
+          </el-button>
+        </div>
+        
+        <el-table 
+          :data="projectReports" 
+          v-loading="loading.reportList" 
+          style="width: 100%; margin-top: 20px;"
+        >
+          <el-table-column prop="filename" label="文件名" show-overflow-tooltip />
+          <el-table-column prop="size" label="文件大小" width="120">
+            <template #default="scope">
+              {{ formatFileSize(scope.row.size) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="created_at" label="创建时间" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200">
+            <template #default="scope">
+              <el-button 
+                size="small" 
+                type="primary" 
+                @click="previewReport(scope.row)"
+              >
+                <el-icon><View /></el-icon>
+                预览
+              </el-button>
+              <el-button 
+                size="small" 
+                type="success" 
+                @click="downloadReport(scope.row)"
+              >
+                <el-icon><Download /></el-icon>
+                下载
+              </el-button>
+              <el-button 
+                size="small" 
+                type="danger" 
+                @click="deleteReport(scope.row)"
+              >
+                <el-icon><Delete /></el-icon>
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        
+        <div v-if="projectReports.length === 0 && !loading.reportList" class="empty-state">
+          <el-empty description="暂无项目报告">
+            <el-button type="primary" @click="generateReport" :loading="loading.generateReport">
+              <el-icon><Document /></el-icon>
+              生成第一个报告
+            </el-button>
+          </el-empty>
+        </div>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="reportDialogVisible = false">关闭</el-button>
+          <el-button type="primary" @click="loadReportList" :loading="loading.reportList">
+            <el-icon><Refresh /></el-icon>
+            刷新列表
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- PDF预览对话框 -->
+    <el-dialog
+      v-model="pdfPreviewVisible"
+      title="PDF报告预览"
+      width="80%"
+      :close-on-click-modal="false"
+      @close="closePdfPreview"
+    >
+      <div class="pdf-preview-container">
+        <iframe
+          v-if="previewPdfUrl"
+          :src="previewPdfUrl"
+          width="100%"
+          height="600px"
+          frameborder="0"
+        >
+          您的浏览器不支持PDF预览，请直接下载查看。
+        </iframe>
+        <div v-else class="preview-loading">
+          <el-loading-spinner />
+          <span>正在加载PDF预览...</span>
+        </div>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="closePdfPreview">关闭预览</el-button>
+        </span>
+      </template>
+    </el-dialog>
     </div>
   </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, nextTick } from 'vue'
-import { ElMessage, type FormInstance } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { 
   Search, 
   Document, 
   Clock, 
   CircleCheck, 
-  TrendCharts 
+  TrendCharts,
+  View,
+  Delete,
+  Download,
+  Refresh
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { getMyTasks, getMyTaskStats, getTaskAssignments, updateTaskAssignment } from '@/api/task'
 import { getTaskAssignmentStats } from '@/api/taskAssignment'
 import { updateTaskProgress } from '@/api/taskProgress'
+import { 
+  generateProjectReport, 
+  getProjectReports, 
+  downloadProjectReport, 
+  deleteProjectReport 
+} from '@/api/system'
 import { useAuthStore } from '@/store/modules/auth'
 
 interface TaskProgress {
@@ -388,7 +535,11 @@ interface PerformanceDetail {
 }
 
 const authStore = useAuthStore()
-const loading = ref(false)
+const loading = reactive({
+  data: false,
+  generateReport: false,
+  reportList: false
+})
 const detailDialogVisible = ref(false)
 const progressManagementDialogVisible = ref(false)
 const progressManagementFormRef = ref<FormInstance>()
@@ -428,6 +579,12 @@ const stats = ref<Stats>({
 })
 
 const performanceDetails = ref<PerformanceDetail[]>([])
+
+// 项目报告相关状态
+const reportDialogVisible = ref(false)
+const projectReports = ref<any[]>([])
+const pdfPreviewVisible = ref(false)
+const previewPdfUrl = ref('')
 
 const progressManagementRules = {
   status: [
@@ -488,7 +645,7 @@ const getTaskDescription = (taskType?: string, taskName?: string) => {
 }
 
 const loadProgressData = async () => {
-  loading.value = true
+  loading.data = true
   try {
     let tasksResponse
     
@@ -563,7 +720,7 @@ const loadProgressData = async () => {
     ElMessage.error('加载任务进度数据失败')
     console.error('加载任务进度失败:', error)
   } finally {
-    loading.value = false
+    loading.data = false
   }
 }
 
@@ -845,6 +1002,169 @@ const handleSizeChange = (val: number) => {
 const handleCurrentChange = (val: number) => {
   pagination.currentPage = val
   loadProgressData()
+}
+
+// 生成项目报告
+const generateReport = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要生成项目报告吗？报告将包含系统当前的运行状态和统计数据。',
+      '确认生成',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消', 
+        type: 'info',
+      }
+    )
+    
+    loading.generateReport = true
+    const response = await generateProjectReport()
+    loading.generateReport = false
+    
+    ElMessage.success('项目报告生成成功')
+    
+    // 询问是否立即查看报告
+    try {
+      await ElMessageBox.confirm(
+        '报告已生成成功，是否立即查看报告列表？',
+        '查看报告',
+        {
+          confirmButtonText: '查看',
+          cancelButtonText: '稍后',
+          type: 'info',
+        }
+      )
+      showReportList()
+    } catch {
+      // 用户选择稍后查看
+    }
+    
+  } catch (error: any) {
+    if (error === 'cancel') {
+      return
+    }
+    loading.generateReport = false
+    console.error('生成报告失败:', error)
+    ElMessage.error('生成报告失败')
+  }
+}
+
+// 显示报告列表
+const showReportList = async () => {
+  reportDialogVisible.value = true
+  await loadReportList()
+}
+
+// 加载报告列表
+const loadReportList = async () => {
+  loading.reportList = true
+  try {
+    const response = await getProjectReports()
+    projectReports.value = response.data.reports || []
+  } catch (error) {
+    console.error('加载报告列表失败:', error)
+    ElMessage.error('加载报告列表失败')
+    projectReports.value = []
+  } finally {
+    loading.reportList = false
+  }
+}
+
+// 下载报告
+const downloadReport = async (report: any) => {
+  try {
+    const response = await downloadProjectReport(report.filename)
+    
+    // 创建下载链接
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = report.filename
+    link.style.display = 'none'
+    
+    // 添加到页面并触发下载
+    document.body.appendChild(link)
+    link.click()
+    
+    // 清理
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('报告下载成功')
+  } catch (error) {
+    console.error('下载报告失败:', error)
+    ElMessage.error('下载报告失败')
+  }
+}
+
+// 预览报告
+const previewReport = async (report: any) => {
+  try {
+    const response = await downloadProjectReport(report.filename)
+    
+    // 创建预览URL
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    
+    previewPdfUrl.value = url
+    pdfPreviewVisible.value = true
+    
+  } catch (error) {
+    console.error('预览报告失败:', error)
+    ElMessage.error('预览报告失败')
+  }
+}
+
+// 关闭预览
+const closePdfPreview = () => {
+  pdfPreviewVisible.value = false
+  if (previewPdfUrl.value) {
+    window.URL.revokeObjectURL(previewPdfUrl.value)
+    previewPdfUrl.value = ''
+  }
+}
+
+// 删除报告
+const deleteReport = async (report: any) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除报告"${report.filename}"吗？`,
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+    
+    await deleteProjectReport(report.filename)
+    ElMessage.success('报告删除成功')
+    
+    // 重新加载报告列表
+    await loadReportList()
+    
+  } catch (error: any) {
+    if (error === 'cancel') {
+      return
+    }
+    console.error('删除报告失败:', error)
+    ElMessage.error('删除报告失败')
+  }
+}
+
+// 格式化文件大小
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// 格式化日期
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleString('zh-CN')
 }
 
 onMounted(() => {
@@ -1212,6 +1532,49 @@ onMounted(() => {
     .el-button {
       margin: 0 10px;
       min-width: 120px;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .report-dialog-content {
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ebeef5;
+      
+      span {
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 0;
+    }
+  }
+
+  .pdf-preview-container {
+    .preview-loading {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 600px;
+      gap: 16px;
+      
+      span {
+        color: #909399;
+        font-size: 14px;
+      }
     }
   }
 }
