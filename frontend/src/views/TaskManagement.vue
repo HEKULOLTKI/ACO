@@ -85,10 +85,17 @@
             </template>
           </el-table-column>
         <el-table-column prop="create_time" label="创建时间" width="150" />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">
               编辑
+            </el-button>
+            <el-button 
+              size="small" 
+              type="primary" 
+              @click="handlePreviewReport(scope.row)"
+            >
+              预览报告
             </el-button>
             <el-button 
               size="small" 
@@ -308,6 +315,7 @@ import {
 import { getTasks, getTasksCount, createTask, updateTask, deleteTask, getTask, bulkImportTasks, type TaskBulkImportResult } from '@/api/task'
 import { getUserList } from '@/api/user'
 import type { User } from '@/types/user'
+import { sendPDFToClient, getAvailableReports } from '@/api/pdf'
 
 interface Task {
   id: number
@@ -476,6 +484,69 @@ const handleDelete = async (row: Task) => {
     if (error?.message !== 'cancel') {
       ElMessage.error('删除失败')
       console.error('删除任务失败:', error)
+    }
+  }
+}
+
+// 预览项目报告
+const handlePreviewReport = async (task: Task) => {
+  try {
+    // 首先获取可用的报告列表
+    const reportsResponse = await getAvailableReports()
+    const reports = reportsResponse.data?.reports || []
+    
+    if (reports.length === 0) {
+      ElMessage.warning('暂无可预览的项目报告')
+      return
+    }
+    
+    // 如果有多个报告，显示选择对话框
+    if (reports.length > 1) {
+      const reportNames = reports.map((report: any) => report.filename)
+      
+      await ElMessageBox.confirm(
+        `找到 ${reports.length} 个项目报告，请选择要预览的报告：\n\n${reportNames.join('\n')}`,
+        '选择项目报告',
+        {
+          confirmButtonText: '预览第一个',
+          cancelButtonText: '取消',
+          type: 'info',
+        }
+      )
+    }
+    
+    // 选择第一个报告进行预览
+    const selectedReport = reports[0]
+    const filename = selectedReport.filename
+    
+    const loadingInstance = ElMessage({
+      message: '正在发送PDF到客户端...',
+      type: 'info',
+      duration: 0
+    })
+    
+    try {
+      // 调用后端API发送PDF到客户端
+      const response = await sendPDFToClient(filename)
+      
+      loadingInstance.close()
+      
+      if (response.data?.status === 'success') {
+        ElMessage.success(`PDF已成功发送到客户端 ${response.data.target_ip}`)
+      } else if (response.data?.status === 'warning') {
+        ElMessage.warning(`发送完成但客户端响应异常: ${response.data.message}`)
+      } else {
+        ElMessage.error(response.data?.message || 'PDF发送失败')
+      }
+    } catch (apiError) {
+      loadingInstance.close()
+      throw apiError
+    }
+    
+  } catch (error: any) {
+    if (error?.message !== 'cancel') {
+      console.error('预览项目报告失败:', error)
+      ElMessage.error('预览项目报告失败：' + (error.response?.data?.detail || error.message))
     }
   }
 }

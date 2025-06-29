@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     DEBUG: bool = True
     
+    # 服务器配置
+    SERVER_HOST: str = "localhost"
+    SERVER_PORT: int = 8000
+    
     class Config:
         env_file = ".env"
 

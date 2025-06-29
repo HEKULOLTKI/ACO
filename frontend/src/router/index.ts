@@ -128,6 +128,15 @@ const routes = [
           requiresAuth: true,
           title: '个人资料'
         }
+      },
+      {
+        path: '/pdf-preview',
+        name: 'PDFPreview',
+        component: () => import('@/views/PDFPreview.vue'),
+        meta: { 
+          requiresAuth: true,
+          title: 'PDF客户端预览'
+        }
       }
     ]
   },

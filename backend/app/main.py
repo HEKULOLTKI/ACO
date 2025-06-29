@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 from app.config import settings
 from app.database import create_tables
-from app.api import auth, user, task, device, desktop, system, chat
+from app.api import auth, user, task, device, desktop, system, chat, pdf
 from app.api import knowledge
 from app.middleware.user_activity import UserActivityMiddleware
 import os
@@ -47,6 +47,7 @@ app.include_router(desktop.router, tags=["桌面管理"])
 app.include_router(system.router, prefix="/api/system", tags=["系统管理"])
 app.include_router(chat.router, prefix="/api/chat", tags=["在线聊天"])
 app.include_router(knowledge.router, tags=["知识库"])
+app.include_router(pdf.router, tags=["PDF预览"])
 
 # 后台定时任务
 async def cleanup_expired_users_task():

@@ -442,36 +442,7 @@
       </template>
     </el-dialog>
 
-    <!-- PDF预览对话框 -->
-    <el-dialog
-      v-model="pdfPreviewVisible"
-      title="PDF报告预览"
-      width="80%"
-      :close-on-click-modal="false"
-      @close="closePdfPreview"
-    >
-      <div class="pdf-preview-container">
-        <iframe
-          v-if="previewPdfUrl"
-          :src="previewPdfUrl"
-          width="100%"
-          height="600px"
-          frameborder="0"
-        >
-          您的浏览器不支持PDF预览，请直接下载查看。
-        </iframe>
-        <div v-else class="preview-loading">
-          <el-loading-spinner />
-          <span>正在加载PDF预览...</span>
-        </div>
-      </div>
-      
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="closePdfPreview">关闭预览</el-button>
-        </span>
-      </template>
-    </el-dialog>
+
     </div>
   </template>
 
@@ -499,6 +470,7 @@ import {
   downloadProjectReport, 
   deleteProjectReport 
 } from '@/api/system'
+import { sendPDFToClient } from '@/api/pdf'
 import { useAuthStore } from '@/store/modules/auth'
 
 interface TaskProgress {
@@ -583,8 +555,6 @@ const performanceDetails = ref<PerformanceDetail[]>([])
 // 项目报告相关状态
 const reportDialogVisible = ref(false)
 const projectReports = ref<any[]>([])
-const pdfPreviewVisible = ref(false)
-const previewPdfUrl = ref('')
 
 const progressManagementRules = {
   status: [
@@ -1101,29 +1071,32 @@ const downloadReport = async (report: any) => {
 // 预览报告
 const previewReport = async (report: any) => {
   try {
-    const response = await downloadProjectReport(report.filename)
+    const loadingInstance = ElMessage({
+      message: '正在发送PDF到客户端...',
+      type: 'info',
+      duration: 0
+    })
     
-    // 创建预览URL
-    const blob = new Blob([response.data], { type: 'application/pdf' })
-    const url = window.URL.createObjectURL(blob)
+    // 发送PDF到客户端预览
+    const response = await sendPDFToClient(report.filename)
     
-    previewPdfUrl.value = url
-    pdfPreviewVisible.value = true
+    loadingInstance.close()
+    
+    if (response.data?.status === 'success') {
+      ElMessage.success(`PDF已成功发送到客户端 ${response.data.target_ip}`)
+    } else if (response.data?.status === 'warning') {
+      ElMessage.warning(`发送完成但客户端响应异常: ${response.data.message}`)
+    } else {
+      ElMessage.error(response.data?.message || 'PDF发送失败')
+    }
     
   } catch (error) {
-    console.error('预览报告失败:', error)
-    ElMessage.error('预览报告失败')
+    console.error('发送PDF到客户端失败:', error)
+    ElMessage.error('发送PDF到客户端失败，请检查网络连接')
   }
 }
 
-// 关闭预览
-const closePdfPreview = () => {
-  pdfPreviewVisible.value = false
-  if (previewPdfUrl.value) {
-    window.URL.revokeObjectURL(previewPdfUrl.value)
-    previewPdfUrl.value = ''
-  }
-}
+
 
 // 删除报告
 const deleteReport = async (report: any) => {
