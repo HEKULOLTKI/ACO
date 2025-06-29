@@ -346,13 +346,6 @@ const handleLogin = async () => {
     #954d9d 50%, 
     #764ba2 75%, 
     #667eea 100%);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
-}
-
-@keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
 }
 
 // 渐变网格
@@ -366,15 +359,9 @@ const handleLogin = async () => {
     linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
   background-size: 50px 50px;
-  animation: gridMove 20s linear infinite;
 }
 
-@keyframes gridMove {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
-}
-
-// 浮动粒子
+// 静态粒子
 .particles {
   position: absolute;
   top: 0;
@@ -384,30 +371,13 @@ const handleLogin = async () => {
   
   .particle {
     position: absolute;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 50%;
-    animation: particleFloat linear infinite;
+    opacity: 0.6;
   }
 }
 
-@keyframes particleFloat {
-  0% {
-    transform: translateY(100vh) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-100px) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-// 光效
+// 静态光效
 .light-effects {
   position: absolute;
   top: 0;
@@ -419,7 +389,7 @@ const handleLogin = async () => {
     position: absolute;
     border-radius: 50%;
     filter: blur(40px);
-    animation: lightPulse 4s ease-in-out infinite alternate;
+    opacity: 0.4;
     
     &.light-1 {
       width: 300px;
@@ -427,7 +397,6 @@ const handleLogin = async () => {
       background: rgba(148, 163, 184, 0.2);
       top: 20%;
       left: 10%;
-      animation-delay: 0s;
     }
     
     &.light-2 {
@@ -436,7 +405,6 @@ const handleLogin = async () => {
       background: rgba(203, 213, 225, 0.15);
       top: 50%;
       right: 15%;
-      animation-delay: 1.5s;
     }
     
     &.light-3 {
@@ -445,14 +413,8 @@ const handleLogin = async () => {
       background: rgba(100, 116, 139, 0.2);
       bottom: 20%;
       left: 20%;
-      animation-delay: 3s;
     }
   }
-}
-
-@keyframes lightPulse {
-  0% { transform: scale(1) rotate(0deg); opacity: 0.3; }
-  100% { transform: scale(1.2) rotate(180deg); opacity: 0.6; }
 }
 
 // 主要内容区域
@@ -1173,4 +1135,4 @@ const handleLogin = async () => {
     }
   }
 }
-</style> 
+</style>
