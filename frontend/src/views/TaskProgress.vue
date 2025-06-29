@@ -391,7 +391,7 @@
               {{ formatDate(scope.row.created_at) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200">
+          <el-table-column label="操作" width="280">
             <template #default="scope">
               <el-button 
                 size="small" 

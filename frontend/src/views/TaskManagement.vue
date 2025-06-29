@@ -85,7 +85,7 @@
             </template>
           </el-table-column>
         <el-table-column prop="create_time" label="创建时间" width="150" />
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">
               编辑

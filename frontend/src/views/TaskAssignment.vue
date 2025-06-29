@@ -469,19 +469,19 @@ onMounted(() => {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
+            font-size: 15px;
             color: #0066cc;
             z-index: 10;
 
             .el-icon {
-              font-size: 14px;
+              font-size: 16px;
             }
 
             .el-button--text {
               padding: 0;
               margin-left: auto;
               color: #0066cc;
-              font-size: 14px;
+              font-size: 15px;
             }
           }
         }
@@ -612,7 +612,7 @@ onMounted(() => {
               margin-bottom: 10px;
               font-weight: 500;
               color: #333;
-              font-size: 15px;
+              font-size: 17px;
             }
 
             .user-list {
@@ -640,12 +640,12 @@ onMounted(() => {
               .user-item {
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                padding: 10px 12px;
+                gap: 12px;
+                padding: 15px 16px;
                 cursor: pointer;
                 border-bottom: 1px solid #f0f0f0;
-                font-size: 15px;
-                min-height: 50px;
+                font-size: 18px;
+                min-height: 70px;
 
                 &:hover {
                   background: #f5f7fa;
@@ -653,36 +653,39 @@ onMounted(() => {
 
                 .user-card-inline {
                   flex: 1;
-                  background: linear-gradient(135deg, #003366 0%, #0066cc 100%);
-                  border-radius: 6px;
-                  padding: 8px 12px;
-                  color: white;
-                  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.3);
-                  min-height: 36px;
+                  background: linear-gradient(135deg, #e6f3ff 0%, #b3d9ff 100%);
+                  border-radius: 8px;
+                  padding: 14px 18px;
+                  color: #0066cc;
+                  box-shadow: 0 2px 8px rgba(179, 217, 255, 0.4);
+                  min-height: 50px;
                   display: flex;
                   align-items: center;
                   justify-content: center;
+                  border: 1px solid #cce7ff;
                   
                   .user-display {
                     font-weight: 600;
-                    font-size: 12px;
+                    font-size: 16px;
                     text-align: center;
-                    line-height: 1.2;
+                    line-height: 1.3;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     max-width: 100%;
-                    letter-spacing: -0.2px;
+                    letter-spacing: 0px;
                   }
                 }
 
                               &.selected {
-                background: #e6f3ff;
+                background: #f0f8ff;
                 border-color: #66b3ff;
                   justify-content: space-between;
                   
                   .user-card-inline {
-                    background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+                    background: linear-gradient(135deg, #cce7ff 0%, #99ccff 100%);
+                    border: 1px solid #80bfff;
+                    color: #003d7a;
                   }
                   
                   &:hover {
@@ -695,7 +698,7 @@ onMounted(() => {
                   
                   .remove-icon {
                     color: #d9d9d9;
-                    font-size: 14px;
+                    font-size: 16px;
                     transition: color 0.2s ease;
                     
                     &:hover {
@@ -717,7 +720,7 @@ onMounted(() => {
                 text-align: center;
                 color: #999;
                 padding: 40px 15px;
-                font-size: 13px;
+                font-size: 15px;
               }
             }
           }
