@@ -97,7 +97,16 @@ const routes = [
         meta: { 
           requiresAuth: true,
           requiresPermission: 'desktop:manage',
-          title: '桌面管理'
+          title: '云桌面管理'
+        }
+      },
+      {
+        path: '/desktop-items',
+        name: 'DesktopItemManagement',
+        component: () => import('@/views/DesktopItemManagement.vue'),
+        meta: { 
+          requiresAuth: true,
+          title: '桌面项目管理'
         }
       },
       {

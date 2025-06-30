@@ -765,36 +765,38 @@ onMounted(() => {
                   flex: 1;
                   background: linear-gradient(135deg, #e6f3ff 0%, #b3d9ff 100%);
                   border-radius: 6px;
-                  padding: 8px 12px;
+                  padding: 10px 14px;
                   color: #0066cc;
                   box-shadow: 0 1px 4px rgba(179, 217, 255, 0.3);
                   display: flex;
-                  flex-direction: column;
+                  flex-direction: row;
                   align-items: center;
-                  justify-content: center;
+                  justify-content: space-between;
                   border: 1px solid #cce7ff;
-                  gap: 2px;
+                  gap: 8px;
                   
                   .user-display {
                     font-weight: 600;
-                    font-size: 13px;
-                    text-align: center;
+                    font-size: 16px;
                     line-height: 1.2;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    max-width: 100%;
+                    flex: 1;
                   }
 
                   .user-role {
-                    font-size: 11px;
-                    font-weight: 400;
-                    opacity: 0.8;
-                    text-align: center;
+                    font-size: 14px;
+                    font-weight: 500;
+                    opacity: 0.9;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    max-width: 100%;
+                    flex-shrink: 0;
+                    background: rgba(255, 255, 255, 0.7);
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-style: italic;
                   }
                 }
 

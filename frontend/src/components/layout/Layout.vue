@@ -136,8 +136,8 @@
           @click="$router.push('/desktop')"
           v-if="userStore.isAdmin || userStore.hasPermission('desktop:manage')"
         >
-          <img src="@/assets/icon/桌面设置.png" alt="桌面管理" class="nav-icon-img" />
-          <span class="nav-text">桌面管理</span>
+          <img src="@/assets/icon/桌面设置.png" alt="云桌面管理" class="nav-icon-img" />
+          <span class="nav-text">云桌面管理</span>
         </div>
         
         <div 

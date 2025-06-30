@@ -3,6 +3,12 @@
     <!-- 页面标题 -->
     <div class="page-header">
       <h1 class="page-title">云桌面管理</h1>
+      <div class="header-actions">
+        <el-button type="primary" @click="router.push('/desktop-items')">
+          <el-icon><Setting /></el-icon>
+          桌面项目管理
+        </el-button>
+      </div>
     </div>
 
     <!-- 筛选条件栏 -->
@@ -187,8 +193,11 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { Search, Plus, Edit, Delete, DocumentCopy, Download, MoreFilled } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { Search, Plus, Edit, Delete, DocumentCopy, Download, MoreFilled, Setting } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+
+const router = useRouter()
 
 // 筛选条件
 const selectedTopic = ref('all')
@@ -352,11 +361,8 @@ const handleAdd = () => {
 }
 
 const handleEdit = () => {
-  if (selectedItems.value.length === 0) {
-    ElMessage.warning('请先选择要编辑的模板')
-    return
-  }
-  ElMessage.success(`编辑 ${selectedItems.value.length} 个模板`)
+  // 路由到桌面项目管理页面
+  router.push('/desktop-items')
 }
 
 const handlePowerOperation = () => {
@@ -414,7 +420,8 @@ const handleSelectItem = () => {
 
 // 单个操作函数
 const handleEditSingle = (index) => {
-  ElMessage.success(`编辑模板：${filteredImageList.value[index].name}`)
+  // 路由到桌面项目管理页面
+  router.push('/desktop-items')
 }
 
 const handleCopy = (index) => {
@@ -482,6 +489,9 @@ const getComputerIconClass = (status) => {
 /* 页面标题 */
 .page-header {
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .page-title {
@@ -489,6 +499,11 @@ const getComputerIconClass = (status) => {
   font-weight: 600;
   color: #333;
   margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 /* 筛选条件栏 */
