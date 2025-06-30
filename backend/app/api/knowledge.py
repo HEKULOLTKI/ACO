@@ -12,7 +12,7 @@ from app.schemas.knowledge import (
 )
 from app.services.knowledge_service import KnowledgeService
 
-router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
+router = APIRouter(prefix="/api/knowledge")
 
 # ===== 知识库管理 =====
 
@@ -43,34 +43,49 @@ async def get_knowledge_bases(
 
 @router.get("/bases/{knowledge_base_id}", response_model=KnowledgeBaseResponse, summary="获取知识库详情")
 async def get_knowledge_base(
-    knowledge_base_id: int,
+    knowledge_base_id: str,
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """获取指定知识库的详细信息"""
+    try:
+        kb_id = int(knowledge_base_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid knowledge_base_id: must be a valid integer")
+    
     service = KnowledgeService(db)
-    return service.get_knowledge_base_by_id(knowledge_base_id)
+    return service.get_knowledge_base_by_id(kb_id)
 
 @router.put("/bases/{knowledge_base_id}", response_model=KnowledgeBaseResponse, summary="更新知识库")
 async def update_knowledge_base(
-    knowledge_base_id: int,
+    knowledge_base_id: str,
     knowledge_base_update: KnowledgeBaseUpdate,
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """更新知识库信息"""
+    try:
+        kb_id = int(knowledge_base_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid knowledge_base_id: must be a valid integer")
+    
     service = KnowledgeService(db)
-    return service.update_knowledge_base(knowledge_base_id, knowledge_base_update, current_user.id)
+    return service.update_knowledge_base(kb_id, knowledge_base_update, current_user.id)
 
 @router.delete("/bases/{knowledge_base_id}", summary="删除知识库")
 async def delete_knowledge_base(
-    knowledge_base_id: int,
+    knowledge_base_id: str,
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """删除知识库及其所有文档"""
+    try:
+        kb_id = int(knowledge_base_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid knowledge_base_id: must be a valid integer")
+    
     service = KnowledgeService(db)
-    service.delete_knowledge_base(knowledge_base_id, current_user.id)
+    service.delete_knowledge_base(kb_id, current_user.id)
     return {"message": "知识库删除成功"}
 
 # ===== 文档管理 =====
@@ -82,13 +97,20 @@ async def create_document(
     source_type: str = Form(...),
     source_url: Optional[str] = Form(None),
     keywords: Optional[str] = Form(None),
-    knowledge_base_id: int = Form(...),
+    knowledge_base_id: str = Form(...),
+    chunk_method: Optional[str] = Form("general"),
     file: Optional[UploadFile] = File(None),
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """创建新文档，支持文件上传"""
     service = KnowledgeService(db)
+    
+    # 处理 knowledge_base_id，转换为整数
+    try:
+        kb_id = int(knowledge_base_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid knowledge_base_id: must be a valid integer")
     
     # 处理关键词
     keywords_list = []
@@ -101,7 +123,8 @@ async def create_document(
         source_type=source_type,
         source_url=source_url,
         keywords=keywords_list,
-        knowledge_base_id=knowledge_base_id
+        knowledge_base_id=kb_id,
+        chunk_method=chunk_method
     )
     
     return service.create_document(document_create, current_user.id, file)
@@ -121,34 +144,49 @@ async def get_documents(
 
 @router.get("/documents/{document_id}", response_model=KnowledgeDocumentResponse, summary="获取文档详情")
 async def get_document(
-    document_id: int,
+    document_id: str,
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """获取指定文档的详细信息"""
+    try:
+        doc_id = int(document_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid document_id: must be a valid integer")
+    
     service = KnowledgeService(db)
-    return service.get_document_by_id(document_id)
+    return service.get_document_by_id(doc_id)
 
 @router.put("/documents/{document_id}", response_model=KnowledgeDocumentResponse, summary="更新文档")
 async def update_document(
-    document_id: int,
+    document_id: str,
     document_update: KnowledgeDocumentUpdate,
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """更新文档信息"""
+    try:
+        doc_id = int(document_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid document_id: must be a valid integer")
+    
     service = KnowledgeService(db)
-    return service.update_document(document_id, document_update, current_user.id)
+    return service.update_document(doc_id, document_update, current_user.id)
 
 @router.delete("/documents/{document_id}", summary="删除文档")
 async def delete_document(
-    document_id: int,
+    document_id: str,
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """删除文档"""
+    try:
+        doc_id = int(document_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid document_id: must be a valid integer")
+    
     service = KnowledgeService(db)
-    service.delete_document(document_id, current_user.id)
+    service.delete_document(doc_id, current_user.id)
     return {"message": "文档删除成功"}
 
 # ===== AI模型管理 =====
@@ -191,7 +229,7 @@ async def get_knowledge_statistics(
 
 @router.get("/documents/{document_id}/download", summary="下载文档文件")
 async def download_document(
-    document_id: int,
+    document_id: str,
     current_user: UserResponse = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -199,8 +237,13 @@ async def download_document(
     from fastapi.responses import FileResponse
     import os
     
+    try:
+        doc_id = int(document_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="Invalid document_id: must be a valid integer")
+    
     service = KnowledgeService(db)
-    document = service.get_document_by_id(document_id)
+    document = service.get_document_by_id(doc_id)
     
     if not document.file_path or not os.path.exists(document.file_path):
         raise HTTPException(status_code=404, detail="文件不存在")

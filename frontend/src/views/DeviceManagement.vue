@@ -69,13 +69,6 @@
             <el-button size="small" @click="handleViewDetail(scope.row)">
               详情
             </el-button>
-            <el-button 
-              size="small" 
-              :type="scope.row.status === 'online' ? 'warning' : 'success'"
-              @click="handleToggleStatus(scope.row)"
-            >
-              {{ scope.row.status === 'online' ? '停用' : '启用' }}
-            </el-button>
             <el-button size="small" @click="handleEdit(scope.row)">
               编辑
             </el-button>
@@ -314,7 +307,6 @@ import {
   createDevice, 
   updateDevice, 
   deleteDevice, 
-  updateDeviceStatus,
   downloadImportTemplate,
   importDevices
 } from '@/api/device'
@@ -470,31 +462,7 @@ const handleEdit = (row: Device) => {
   Object.assign(deviceForm, row)
 }
 
-const handleToggleStatus = async (row: Device) => {
-  const newStatus = row.status === 'online' ? 'offline' : 'online'
-  const action = newStatus === 'online' ? '启用' : '停用'
-  
-  try {
-    await ElMessageBox.confirm(
-      `确定要${action}设备 "${row.name}" 吗？`,
-      `确认${action}`,
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-    
-    await updateDeviceStatus(row.id, newStatus)
-    ElMessage.success(`设备${action}成功`)
-    loadDevices()
-  } catch (error: any) {
-    if (error.message !== 'cancel') {
-      console.error('更新设备状态失败:', error)
-      ElMessage.error('更新设备状态失败')
-    }
-  }
-}
+
 
 const handleDelete = async (row: Device) => {
   try {

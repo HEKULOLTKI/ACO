@@ -20,7 +20,7 @@ class User(Base):
     # 关联关系
     task_assignments = relationship("TaskAssignment", back_populates="user")
     desktop_items = relationship("DesktopItem", back_populates="user")
-    knowledge_bases = relationship("KnowledgeBase", back_populates="creator")
+    knowledge_bases = relationship("KnowledgeBase", back_populates="creator", foreign_keys="[KnowledgeBase.creator_id]")
     
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', role='{self.role}')>" 

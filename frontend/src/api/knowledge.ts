@@ -1,5 +1,7 @@
 import request from '@/utils/request'
 
+// ===== 类型定义 =====
+
 export interface KnowledgeBase {
   id: number
   name: string
@@ -9,7 +11,10 @@ export interface KnowledgeBase {
   is_public: boolean
   status: string
   creator_id: number
-  document_count: number
+  assigned_engineer_id?: number
+  assigned_engineer_name?: string
+  assigned_engineer_photo?: string
+  document_count?: number
   created_at: string
   updated_at: string
 }
@@ -25,6 +30,10 @@ export interface KnowledgeDocument {
   file_size?: number
   keywords?: string[]
   is_processed: boolean
+  parse_status: string
+  chunk_method: string
+  chunk_count: number
+  is_enabled: boolean
   knowledge_base_id: number
   creator_id: number
   created_at: string
@@ -38,7 +47,7 @@ export interface AIModel {
   provider: string
   api_endpoint?: string
   api_key?: string
-  model_config?: Record<string, any>
+  config_params?: Record<string, any>
   is_default: boolean
   status: string
   created_at: string
@@ -61,8 +70,9 @@ export const createKnowledgeBase = (data: {
   tags?: string[]
   is_public?: boolean
   status?: string
+  assigned_engineer_id?: number
 }) => {
-  return request.post('/knowledge/bases', data)
+  return request.post<KnowledgeBase>('/knowledge/bases', data)
 }
 
 export const getKnowledgeBases = (params?: {
@@ -74,29 +84,30 @@ export const getKnowledgeBases = (params?: {
   return request.get<KnowledgeBase[]>('/knowledge/bases', { params })
 }
 
-export const getKnowledgeBase = (id: number) => {
-  return request.get<KnowledgeBase>(`/knowledge/bases/${id}`)
+export const getKnowledgeBase = (knowledgeBaseId: string) => {
+  return request.get<KnowledgeBase>(`/knowledge/bases/${knowledgeBaseId}`)
 }
 
-export const updateKnowledgeBase = (id: number, data: {
+export const updateKnowledgeBase = (knowledgeBaseId: string, data: {
   name?: string
   description?: string
   category?: string
   tags?: string[]
   is_public?: boolean
   status?: string
+  assigned_engineer_id?: number
 }) => {
-  return request.put(`/knowledge/bases/${id}`, data)
+  return request.put<KnowledgeBase>(`/knowledge/bases/${knowledgeBaseId}`, data)
 }
 
-export const deleteKnowledgeBase = (id: number) => {
-  return request.delete(`/knowledge/bases/${id}`)
+export const deleteKnowledgeBase = (knowledgeBaseId: string) => {
+  return request.delete(`/knowledge/bases/${knowledgeBaseId}`)
 }
 
 // ===== 文档管理 =====
 
 export const createDocument = (formData: FormData) => {
-  return request.post('/knowledge/documents', formData, {
+  return request.post<KnowledgeDocument>('/knowledge/documents', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -104,7 +115,7 @@ export const createDocument = (formData: FormData) => {
 }
 
 export const getDocuments = (params?: {
-  knowledge_base_id?: number
+  knowledge_base_id?: string
   skip?: number
   limit?: number
   source_type?: string
@@ -112,25 +123,29 @@ export const getDocuments = (params?: {
   return request.get<KnowledgeDocument[]>('/knowledge/documents', { params })
 }
 
-export const getDocument = (id: number) => {
-  return request.get<KnowledgeDocument>(`/knowledge/documents/${id}`)
+export const getDocument = (documentId: string) => {
+  return request.get<KnowledgeDocument>(`/knowledge/documents/${documentId}`)
 }
 
-export const updateDocument = (id: number, data: {
+export const updateDocument = (documentId: string, data: {
   title?: string
   content?: string
   source_url?: string
   keywords?: string[]
+  parse_status?: string
+  chunk_method?: string
+  chunk_count?: number
+  is_enabled?: boolean
 }) => {
-  return request.put(`/knowledge/documents/${id}`, data)
+  return request.put<KnowledgeDocument>(`/knowledge/documents/${documentId}`, data)
 }
 
-export const deleteDocument = (id: number) => {
-  return request.delete(`/knowledge/documents/${id}`)
+export const deleteDocument = (documentId: string) => {
+  return request.delete(`/knowledge/documents/${documentId}`)
 }
 
-export const downloadDocument = (id: number) => {
-  return request.get(`/knowledge/documents/${id}/download`, {
+export const downloadDocument = (documentId: string) => {
+  return request.get(`/knowledge/documents/${documentId}/download`, {
     responseType: 'blob'
   })
 }
@@ -143,11 +158,11 @@ export const createAIModel = (data: {
   provider: string
   api_endpoint?: string
   api_key?: string
-  model_config?: Record<string, any>
+  config_params?: Record<string, any>
   is_default?: boolean
   status?: string
 }) => {
-  return request.post('/knowledge/ai-models', data)
+  return request.post<AIModel>('/knowledge/ai-models', data)
 }
 
 export const getAIModels = (params?: {

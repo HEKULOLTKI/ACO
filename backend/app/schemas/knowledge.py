@@ -10,6 +10,7 @@ class KnowledgeBaseBase(BaseModel):
     tags: Optional[List[str]] = Field(default=None, description="标签")
     is_public: bool = Field(default=True, description="是否公开")
     status: str = Field(default="active", description="状态")
+    assigned_engineer_id: Optional[int] = Field(default=None, description="分配的工程师ID")
 
 class KnowledgeBaseCreate(KnowledgeBaseBase):
     """创建知识库请求模式"""
@@ -23,12 +24,15 @@ class KnowledgeBaseUpdate(BaseModel):
     tags: Optional[List[str]] = None
     is_public: Optional[bool] = None
     status: Optional[str] = None
+    assigned_engineer_id: Optional[int] = None
 
 class KnowledgeBaseResponse(KnowledgeBaseBase):
     """知识库响应模式"""
     id: int
     creator_id: int
     document_count: Optional[int] = 0
+    assigned_engineer_name: Optional[str] = None
+    assigned_engineer_photo: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     
@@ -45,6 +49,7 @@ class KnowledgeDocumentBase(BaseModel):
 class KnowledgeDocumentCreate(KnowledgeDocumentBase):
     """创建知识库文档请求模式"""
     knowledge_base_id: int = Field(description="所属知识库ID")
+    chunk_method: Optional[str] = Field(default="general", description="切片方法")
 
 class KnowledgeDocumentUpdate(BaseModel):
     """更新知识库文档请求模式"""
@@ -52,6 +57,10 @@ class KnowledgeDocumentUpdate(BaseModel):
     content: Optional[str] = None
     source_url: Optional[str] = None
     keywords: Optional[List[str]] = None
+    parse_status: Optional[str] = None
+    chunk_method: Optional[str] = None
+    chunk_count: Optional[int] = None
+    is_enabled: Optional[bool] = None
 
 class KnowledgeDocumentResponse(KnowledgeDocumentBase):
     """知识库文档响应模式"""
@@ -60,6 +69,10 @@ class KnowledgeDocumentResponse(KnowledgeDocumentBase):
     file_type: Optional[str] = None
     file_size: Optional[int] = None
     is_processed: bool = False
+    parse_status: str = "success"
+    chunk_method: str = "general"
+    chunk_count: int = 0
+    is_enabled: bool = True
     knowledge_base_id: int
     creator_id: int
     created_at: datetime

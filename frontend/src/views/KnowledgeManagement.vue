@@ -54,67 +54,100 @@
       </el-card>
     </div>
 
-    <!-- 知识库列表 -->
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>知识库列表</span>
+    <!-- 知识库卡片网格 -->
+    <div class="knowledge-section">
+      <div class="section-header">
+        <h2 class="section-title">知识库列表</h2>
+      </div>
+      
+      <div class="knowledge-cards-container" v-loading="loading">
+        <div class="knowledge-cards-grid">
+          <div 
+            class="knowledge-card" 
+            v-for="item in knowledgeBases" 
+            :key="item.id"
+            @click="goToDocuments(item)"
+          >
+            <!-- 卡片头部 -->
+            <div class="card-header">
+              <div class="card-avatar">
+                <el-avatar 
+                  :size="40"
+                  :icon="UserFilled"
+                  class="engineer-avatar"
+                >
+                  <el-icon><UserFilled /></el-icon>
+                </el-avatar>
+              </div>
+              <el-dropdown trigger="hover" @click.stop>
+                <div class="card-more">
+                  <el-icon><MoreFilled /></el-icon>
+                </div>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="goToDocuments(item)">
+                      <el-icon><Document /></el-icon>
+                      文档管理
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="editItem(item)">
+                      <el-icon><Edit /></el-icon>
+                      编辑
+                    </el-dropdown-item>
+                    <el-dropdown-item divided @click="deleteItem(item)">
+                      <el-icon><Delete /></el-icon>
+                      删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+            
+            <!-- 卡片内容 -->
+            <div class="card-body">
+              <h3 class="card-title">{{ item.name }}</h3>
+              <p class="card-description" v-if="item.description">{{ item.description }}</p>
+              
+              <!-- 标签区域 -->
+              <div class="card-tags" v-if="item.category || item.is_public !== undefined">
+                <el-tag v-if="item.category" size="small" class="card-tag">{{ item.category }}</el-tag>
+                <el-tag 
+                  :type="item.is_public ? 'success' : 'warning'" 
+                  size="small" 
+                  class="card-tag"
+                >
+                  {{ item.is_public ? '公开' : '私有' }}
+                </el-tag>
+                <el-tag 
+                  :type="item.status === 'active' ? 'success' : 'danger'" 
+                  size="small" 
+                  class="card-tag"
+                >
+                  {{ item.status === 'active' ? '启用' : '禁用' }}
+                </el-tag>
+              </div>
+            </div>
+            
+            <!-- 卡片底部 -->
+            <div class="card-footer">
+              <div class="card-info">
+                <div class="info-item">
+                  <el-icon><Document /></el-icon>
+                  <span>{{ item.document_count || 0 }} 文档</span>
+                </div>
+              </div>
+              <div class="card-time">{{ formatTime(item.created_at) }}</div>
+            </div>
+          </div>
         </div>
-      </template>
-
-      <el-table :data="knowledgeBases" v-loading="loading" stripe>
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="知识库名称" min-width="150" />
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="category" label="分类" width="120">
-          <template #default="scope">
-            <el-tag v-if="scope.row.category" size="small">{{ scope.row.category }}</el-tag>
-            <span v-else class="text-gray">未分类</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="document_count" label="文档数量" width="100" align="center" />
-        <el-table-column prop="is_public" label="公开状态" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.is_public ? 'success' : 'warning'" size="small">
-              {{ scope.row.is_public ? '公开' : '私有' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
-          <template #default="scope">
-            <el-tag 
-              :type="scope.row.status === 'active' ? 'success' : 'danger'" 
-              size="small"
-            >
-              {{ scope.row.status === 'active' ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
-          <template #default="scope">
-            {{ formatTime(scope.row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
-          <template #default="scope">
-            <el-button size="small" @click="viewDocuments(scope.row)">
-              <el-icon><Document /></el-icon>
-              文档管理
-            </el-button>
-            <el-button size="small" @click="editItem(scope.row)">
-              编辑
-            </el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              @click="deleteItem(scope.row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+        
+        <!-- 空状态 -->
+        <div v-if="knowledgeBases.length === 0 && !loading" class="empty-state">
+          <el-empty description="暂无知识库数据">
+            <el-button type="primary" @click="showCreateDialog">创建第一个知识库</el-button>
+          </el-empty>
+        </div>
+      </div>
+    </div>
 
     <!-- 创建/编辑对话框 -->
     <el-dialog 
@@ -317,9 +350,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { 
-  Plus, Refresh, Folder, Document, Collection
+  Plus, Refresh, Folder, Document, Collection, MoreFilled, Edit, Delete, UserFilled
 } from '@element-plus/icons-vue'
 import {
   getKnowledgeBases, 
@@ -336,6 +370,9 @@ import {
   type KnowledgeStatistics,
   type KnowledgeDocument
 } from '@/api/knowledge'
+
+// 路由
+const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
@@ -460,7 +497,7 @@ const submitForm = async () => {
     submitting.value = true
     
     if (isEdit.value) {
-      await updateKnowledgeBase(editId.value, form)
+      await updateKnowledgeBase(editId.value.toString(), form)
       ElMessage.success('知识库更新成功')
     } else {
       await createKnowledgeBase(form)
@@ -499,7 +536,7 @@ const deleteItem = async (item: KnowledgeBase) => {
       { type: 'warning' }
     )
     
-    await deleteKnowledgeBase(item.id)
+    await deleteKnowledgeBase(item.id.toString())
     ElMessage.success('知识库删除成功')
     loadKnowledgeBases()
     loadStatistics()
@@ -512,7 +549,14 @@ const deleteItem = async (item: KnowledgeBase) => {
 }
 
 // 文档管理方法
-const viewDocuments = (knowledgeBase: KnowledgeBase) => {
+const goToDocuments = (knowledgeBase: KnowledgeBase) => {
+  router.push({
+    path: `/knowledge/${knowledgeBase.id}/documents`,
+    query: { name: knowledgeBase.name }
+  })
+}
+
+const showDocumentDialog = (knowledgeBase: KnowledgeBase) => {
   selectedKnowledgeBase.value = knowledgeBase
   documentDialogVisible.value = true
   loadDocuments()
@@ -523,7 +567,7 @@ const loadDocuments = async () => {
   
   documentLoading.value = true
   try {
-    const response = await getDocuments({ knowledge_base_id: selectedKnowledgeBase.value.id })
+    const response = await getDocuments({ knowledge_base_id: selectedKnowledgeBase.value.id.toString() })
     documents.value = response.data
   } catch (error) {
     console.error('加载文档失败:', error)
@@ -559,6 +603,12 @@ const handleFileChange = (file: any) => {
 const submitDocumentForm = async () => {
   if (!documentFormRef.value) return
   
+  // 验证知识库ID是否有效
+  if (!documentForm.knowledge_base_id || documentForm.knowledge_base_id <= 0) {
+    ElMessage.error('请选择有效的知识库')
+    return
+  }
+  
   try {
     await documentFormRef.value.validate()
     documentSubmitting.value = true
@@ -585,7 +635,18 @@ const submitDocumentForm = async () => {
     }
     
     if (isEditDocument.value) {
-      await updateDocument(editDocumentId.value, documentForm)
+      // 对于编辑文档，我们需要构建更新数据对象而不是FormData
+      const updateData: any = {
+        title: documentForm.title,
+        content: documentForm.content,
+        source_url: documentForm.source_url
+      }
+      
+      if (documentKeywords.value) {
+        updateData.keywords = documentKeywords.value.split(',').map(k => k.trim()).filter(k => k)
+      }
+      
+      await updateDocument(editDocumentId.value.toString(), updateData)
       ElMessage.success('文档更新成功')
     } else {
       await createDocument(formData)
@@ -625,7 +686,7 @@ const deleteDocument = async (document: KnowledgeDocument) => {
       { type: 'warning' }
     )
     
-    await deleteDocumentApi(document.id)
+    await deleteDocumentApi(document.id.toString())
     ElMessage.success('文档删除成功')
     loadDocuments()
     loadStatistics()
@@ -639,7 +700,7 @@ const deleteDocument = async (document: KnowledgeDocument) => {
 
 const downloadDocument = async (doc: KnowledgeDocument) => {
   try {
-    const response = await downloadDocumentApi(doc.id)
+    const response = await downloadDocumentApi(doc.id.toString())
     // 处理文件下载
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
@@ -731,19 +792,157 @@ onMounted(() => {
     }
   }
   
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    span {
-      font-weight: 600;
-      color: #303133;
-    }
-  }
-  
   .text-gray {
     color: #909399;
+  }
+  
+  /* 知识库卡片样式 */
+  .knowledge-section {
+    .section-header {
+      margin-bottom: 20px;
+      
+      .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #303133;
+        margin: 0;
+      }
+    }
+    
+    .knowledge-cards-container {
+      .knowledge-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        
+        .knowledge-card {
+          background: white;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+          transition: all 0.3s ease;
+          cursor: pointer;
+          border: 1px solid #f0f0f0;
+          
+          &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-color: #e6f7ff;
+          }
+          
+          .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            
+            .card-avatar {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              
+              .engineer-avatar {
+                border: 2px solid #e6f7ff;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease;
+                
+                &:hover {
+                  transform: scale(1.1);
+                  border-color: #1890ff;
+                }
+              }
+            }
+            
+            .card-more {
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #909399;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              
+              &:hover {
+                background: #f5f7fa;
+                color: #303133;
+              }
+            }
+          }
+          
+          .card-body {
+            margin-bottom: 16px;
+            
+            .card-title {
+              font-size: 16px;
+              font-weight: 600;
+              color: #303133;
+              margin: 0 0 8px 0;
+              line-height: 1.4;
+            }
+            
+            .card-description {
+              font-size: 14px;
+              color: #606266;
+              line-height: 1.5;
+              margin: 0 0 12px 0;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            }
+            
+            .card-tags {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 6px;
+              
+              .card-tag {
+                font-size: 12px;
+              }
+            }
+          }
+          
+          .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+            
+            .card-info {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              
+              .info-item {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 14px;
+                color: #606266;
+                
+                .el-icon {
+                  font-size: 16px;
+                  color: #909399;
+                }
+              }
+            }
+            
+            .card-time {
+              font-size: 12px;
+              color: #909399;
+            }
+          }
+        }
+      }
+      
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+      }
+    }
   }
   
   .document-management {

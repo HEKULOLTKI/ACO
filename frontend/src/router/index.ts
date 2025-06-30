@@ -121,6 +121,16 @@ const routes = [
         }
       },
       {
+        path: '/knowledge/:id/documents',
+        name: 'KnowledgeDocuments',
+        component: () => import('@/views/KnowledgeDocuments.vue'),
+        meta: { 
+          requiresAuth: true,
+          requiresAdmin: true,
+          title: '知识库文档管理'
+        }
+      },
+      {
         path: '/profile',
         name: 'UserProfile',
         component: () => import('@/views/UserProfile.vue'),

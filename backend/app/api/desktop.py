@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/api/desktop", tags=["desktop"])
+router = APIRouter(prefix="/api/desktop")
 
 @router.get("/test")
 async def test_desktop():

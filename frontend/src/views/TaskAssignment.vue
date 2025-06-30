@@ -8,7 +8,12 @@
         <el-card shadow="never" class="task-card">
           <template #header>
             <div class="card-header">
-              <span>🔖 任务下发列表</span>
+              <div class="header-left">
+                <span>🔖 任务下发列表</span>
+                <el-tag v-if="filteredTasks.length > 0" type="info" size="small">
+                  {{ filteredTasks.length }} 个任务
+                </el-tag>
+              </div>
               <!-- 角色选择器 -->
               <div class="role-selector">
                 <el-select
@@ -16,7 +21,8 @@
                   placeholder="选择角色任务"
                   clearable
                   @change="handleRoleChange"
-                  style="width: 200px"
+                  style="width: 180px"
+                  size="small"
                 >
                   <el-option label="全部任务" value="" />
                   <el-option label="网络规划设计师" value="网络规划设计师" />
@@ -35,21 +41,23 @@
               @selection-change="handleTaskSelectionChange"
               @current-change="handleCurrentTaskChange"
               highlight-current-row
-              height="320"
+              height="450"
               style="width: 100%"
+              size="small"
             >
-              <el-table-column type="selection" width="55" />
-              <el-table-column prop="id" label="任务ID" width="80" />
-              <el-table-column prop="name" label="任务名称" min-width="160" show-overflow-tooltip />
-              <el-table-column prop="type" label="任务类型" width="120" />
-              <el-table-column prop="phase" label="阶段任务" width="120" />
+              <el-table-column type="selection" width="45" />
+              <el-table-column prop="id" label="ID" width="60" />
+              <el-table-column prop="name" label="任务名称" min-width="140" show-overflow-tooltip />
+              <el-table-column prop="type" label="类型" width="100" />
+              <el-table-column prop="phase" label="阶段" width="100" />
+              <el-table-column prop="role_binding" label="绑定角色" width="120" show-overflow-tooltip />
             </el-table>
             
             <!-- 批量操作提示 -->
             <div v-if="selectedTasks.length > 0" class="batch-info">
               <el-icon><InfoFilled /></el-icon>
               <span>已选择 {{ selectedTasks.length }} 个任务</span>
-              <el-button type="text" @click="clearTaskSelection">清空选择</el-button>
+              <el-button type="text" @click="clearTaskSelection" size="small">清空选择</el-button>
             </div>
           </div>
         </el-card>
@@ -60,6 +68,9 @@
             <div class="card-header">
               <el-icon><Document /></el-icon>
               <span>任务详情</span>
+              <el-tag v-if="currentTask" type="success" size="small">
+                {{ currentTask.name }}
+              </el-tag>
             </div>
           </template>
           
@@ -67,18 +78,53 @@
             <div v-if="currentTask" class="detail-content">
               <div class="detail-grid">
                 <div class="detail-item">
+                  <label class="detail-label">任务ID</label>
+                  <div class="detail-value">{{ currentTask.id }}</div>
+                </div>
+                <div class="detail-item">
+                  <label class="detail-label">任务名称</label>
+                  <div class="detail-value">{{ currentTask.name }}</div>
+                </div>
+                <div class="detail-item">
+                  <label class="detail-label">任务类型</label>
+                  <div class="detail-value">{{ currentTask.type || '未指定' }}</div>
+                </div>
+                <div class="detail-item">
+                  <label class="detail-label">阶段任务</label>
+                  <div class="detail-value">{{ currentTask.phase || '未指定' }}</div>
+                </div>
+                <div class="detail-item">
+                  <label class="detail-label">绑定角色</label>
+                  <div class="detail-value">{{ currentTask.role_binding || '未指定' }}</div>
+                </div>
+                <div class="detail-item">
+                  <label class="detail-label">任务状态</label>
+                  <div class="detail-value">
+                    <el-tag :type="getStatusType(currentTask.status)" size="small">
+                      {{ currentTask.status || '未分配' }}
+                    </el-tag>
+                  </div>
+                </div>
+                <div class="detail-item">
                   <label class="detail-label">创建时间</label>
                   <div class="detail-value">{{ formatDate(currentTask.create_time) }}</div>
                 </div>
+                <div class="detail-item">
+                  <label class="detail-label">更新时间</label>
+                  <div class="detail-value">{{ formatDate(currentTask.update_time) || '未更新' }}</div>
+                </div>
                 <div class="detail-item detail-description">
                   <label class="detail-label">任务描述</label>
-                  <div class="detail-value">{{ currentTask.description || '对生产环境进行全面的安全漏洞扫描，包括操作系统、应用程序和网络设备' }}</div>
+                  <div class="detail-value description-content">
+                    {{ currentTask.description || '对生产环境进行全面的安全漏洞扫描，包括操作系统、应用程序和网络设备。此任务需要使用专业的安全扫描工具，对目标系统进行深度检测，识别潜在的安全风险和漏洞，并生成详细的安全评估报告。' }}
+                  </div>
                 </div>
               </div>
             </div>
             <div v-else class="placeholder">
               <el-icon><InfoFilled /></el-icon>
-              <span>选择任务查看详情</span>
+              <span>点击任务查看详情</span>
+              <p class="placeholder-tip">选择左侧任务列表中的任务，<br>即可在此处查看详细信息</p>
             </div>
           </div>
         </el-card>
@@ -90,15 +136,31 @@
         <el-card shadow="never" class="user-selection-card">
           <template #header>
             <div class="card-header">
-              <span>👥 选择执行角色</span>
+              <div class="header-left">
+                <span>👥 选择执行角色</span>
+                <el-tag type="warning" size="small">
+                  {{ availableUsers.length }} 个可用角色
+                </el-tag>
+              </div>
+              <el-tag v-if="selectedUsers.length > 0" type="success" size="small">
+                已选 {{ selectedUsers.length }} 个
+              </el-tag>
             </div>
           </template>
 
           <div class="user-selection">
-            <!-- 可选执行角色（左侧） -->
+            <!-- 可选执行角色（上方） -->
             <div class="available-users-section">
               <div class="section-header">
-                <span>选择执行角色 ({{ availableUsers.length }}/20 项)</span>
+                <span>可选执行角色</span>
+                <el-button 
+                  v-if="checkedAvailableUsers.length > 0"
+                  type="primary" 
+                  size="small"
+                  @click="addSelectedUsers"
+                >
+                  添加选中 ({{ checkedAvailableUsers.length }})
+                </el-button>
               </div>
               <div class="user-list available" :class="{ loading: userLoading }">
                 <div 
@@ -109,7 +171,8 @@
                 >
                   <el-checkbox :model-value="checkedAvailableUsers.includes(user.username)" />
                   <div class="user-card-inline">
-                    <div class="user-display">{{ user.username }}（{{ user.role }}）</div>
+                    <div class="user-display">{{ user.username }}</div>
+                    <div class="user-role">{{ user.role }}</div>
                   </div>
                 </div>
                 <div v-if="availableUsers.length === 0 && !userLoading" class="empty-state">
@@ -118,24 +181,22 @@
               </div>
             </div>
 
-            <!-- 传输按钮 -->
-            <div class="transfer-buttons">
-              <el-button 
-                type="primary" 
-                circle 
-                :disabled="checkedAvailableUsers.length === 0"
-                @click="addSelectedUsers"
-                class="transfer-btn"
-              >
-                <el-icon><ArrowRight /></el-icon>
-              </el-button>
-            </div>
-
-            <!-- 已选执行角色（右侧） -->
+            <!-- 已选执行角色（下方） -->
             <div class="selected-users-section">
               <div class="section-header">
-                <el-icon><Check /></el-icon>
-                <span>已选执行角色 ({{ selectedUsers.length }}/20 项)</span>
+                <div class="header-left">
+                  <el-icon><Check /></el-icon>
+                  <span>已选执行角色</span>
+                </div>
+                <el-button 
+                  v-if="selectedUsers.length > 0"
+                  type="danger" 
+                  size="small"
+                  plain
+                  @click="clearSelectedUsers"
+                >
+                  清空全部
+                </el-button>
               </div>
               <div class="user-list selected">
                 <div 
@@ -146,12 +207,13 @@
                   title="点击移除用户"
                 >
                   <div class="user-card-inline">
-                    <div class="user-display">{{ user.username }}（{{ user.role }}）</div>
+                    <div class="user-display">{{ user.username }}</div>
+                    <div class="user-role">{{ user.role }}</div>
                   </div>
                   <el-icon class="remove-icon"><Close /></el-icon>
                 </div>
                 <div v-if="selectedUsers.length === 0" class="empty-state">
-                  已分配执行角色 (0 项)
+                  点击上方用户进行选择
                 </div>
               </div>
             </div>
@@ -167,7 +229,8 @@
             @click="handleAssignTasks"
             style="width: 100%;"
           >
-            分配任务 ({{ selectedTasks.length }})
+            <el-icon><Check /></el-icon>
+            分配任务 ({{ selectedTasks.length }} 个任务 → {{ selectedUsers.length }} 个角色)
           </el-button>
         </div>
       </div>
@@ -283,6 +346,11 @@ const handleCurrentTaskChange = (currentRow: Task | null) => {
 const clearTaskSelection = () => {
   selectedTasks.value = []
   currentTask.value = null
+}
+
+// 清空已选用户
+const clearSelectedUsers = () => {
+  selectedUsers.value = []
 }
 
 const handleRoleChange = () => {
@@ -422,22 +490,20 @@ onMounted(() => {
 .task-assignment {
   padding: 0;
   background: transparent;
-  height: 100%;
 
   .assignment-layout {
     display: flex;
-    gap: 14px;
-    height: 100%;
-    padding: 14px;
+    gap: 12px;
+    padding: 8px;
 
     .left-panel {
-      width: 55%;
+      width: 60%;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
 
       .task-card {
-        flex: 1;
+        flex: 2;
         
         .card-header {
           display: flex;
@@ -445,6 +511,12 @@ onMounted(() => {
           justify-content: space-between;
           font-weight: 500;
           font-size: 16px;
+
+          .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
 
           .role-selector {
             display: flex;
@@ -457,7 +529,7 @@ onMounted(() => {
           height: 100%;
           position: relative;
 
-                      .batch-info {
+          .batch-info {
             position: absolute;
             bottom: 8px;
             left: 8px;
@@ -465,11 +537,11 @@ onMounted(() => {
             background: #e6f3ff;
             border: 1px solid #66b3ff;
             border-radius: 4px;
-            padding: 8px 14px;
+            padding: 6px 12px;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 15px;
+            font-size: 14px;
             color: #0066cc;
             z-index: 10;
 
@@ -481,14 +553,14 @@ onMounted(() => {
               padding: 0;
               margin-left: auto;
               color: #0066cc;
-              font-size: 15px;
+              font-size: 14px;
             }
           }
         }
       }
 
       .task-detail-card {
-        flex: 0 0 200px;
+        flex: 1;
 
         .card-header {
           display: flex;
@@ -499,7 +571,7 @@ onMounted(() => {
         }
 
         .task-detail {
-          height: 160px;
+          height: 280px; // 设置固定合理高度
           overflow-y: auto;
           
           &::-webkit-scrollbar {
@@ -524,7 +596,7 @@ onMounted(() => {
             .detail-grid {
               display: grid;
               grid-template-columns: 1fr;
-              gap: 14px;
+              gap: 16px;
 
               .detail-item {
                 &.detail-description {
@@ -533,26 +605,43 @@ onMounted(() => {
 
                 .detail-label {
                   display: block;
-                  font-size: 11px;
+                  font-size: 12px;
                   color: #909399;
-                  font-weight: 500;
+                  font-weight: 600;
                   margin-bottom: 6px;
                   text-transform: uppercase;
                   letter-spacing: 0.5px;
                 }
 
                 .detail-value {
-                  font-size: 13px;
+                  font-size: 14px;
                   color: #303133;
                   line-height: 1.4;
                   word-break: break-all;
                   background: #f8f9fa;
-                  padding: 6px 10px;
-                  border-radius: 4px;
-                  border-left: 3px solid #0066cc;
-                  min-height: 20px;
+                  padding: 8px 12px;
+                  border-radius: 6px;
+                  border-left: 4px solid #0066cc;
+                  min-height: 24px;
                   display: flex;
                   align-items: center;
+
+                  &.description-content {
+                    align-items: flex-start;
+                    padding: 12px;
+                    line-height: 1.6;
+                    white-space: pre-wrap;
+                    word-break: break-word;
+                    max-height: 120px;
+                    overflow-y: auto;
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border-left: 4px solid #17a2b8;
+                  }
+
+                  .el-tag {
+                    margin: 0;
+                    font-weight: 600;
+                  }
                 }
               }
             }
@@ -564,7 +653,7 @@ onMounted(() => {
             align-items: center;
             justify-content: center;
             color: #909399;
-            padding: 30px 0;
+            padding: 40px 0;
             background: #f9f9f9;
             border-radius: 8px;
             font-size: 14px;
@@ -574,32 +663,47 @@ onMounted(() => {
               font-size: 24px;
               color: #c0c4cc;
             }
+
+            .placeholder-tip {
+              margin: 8px 0 0 0;
+              color: #bbb;
+              font-size: 12px;
+              text-align: center;
+              line-height: 1.4;
+            }
           }
         }
       }
     }
 
     .right-panel {
-      width: 45%;
+      width: 40%;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
 
       .user-selection-card {
-        flex: 1;
+        flex: 1; // 占满剩余空间，与左侧高度一致
 
         .card-header {
           display: flex;
           align-items: center;
+          justify-content: space-between;
           font-weight: 500;
           font-size: 16px;
+
+          .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
         }
 
         .user-selection {
           display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          height: 460px;
+          flex-direction: column;
+          gap: 12px;
+          height: 100%;
 
           .available-users-section,
           .selected-users-section {
@@ -608,17 +712,23 @@ onMounted(() => {
             .section-header {
               display: flex;
               align-items: center;
-              gap: 8px;
-              margin-bottom: 10px;
+              justify-content: space-between;
+              margin-bottom: 8px;
               font-weight: 500;
               color: #333;
-              font-size: 17px;
+              font-size: 14px;
+
+              .header-left {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+              }
             }
 
             .user-list {
               border: 1px solid #dcdfe6;
               border-radius: 4px;
-              height: 420px;
+              flex: 1; // 使用flex布局自动分配高度
               overflow-y: auto;
               background: #fff;
               position: relative;
@@ -640,12 +750,12 @@ onMounted(() => {
               .user-item {
                 display: flex;
                 align-items: center;
-                gap: 12px;
-                padding: 15px 16px;
+                gap: 8px;
+                padding: 8px 10px;
                 cursor: pointer;
                 border-bottom: 1px solid #f0f0f0;
-                font-size: 18px;
-                min-height: 70px;
+                font-size: 14px;
+                min-height: 50px;
 
                 &:hover {
                   background: #f5f7fa;
@@ -654,32 +764,43 @@ onMounted(() => {
                 .user-card-inline {
                   flex: 1;
                   background: linear-gradient(135deg, #e6f3ff 0%, #b3d9ff 100%);
-                  border-radius: 8px;
-                  padding: 14px 18px;
+                  border-radius: 6px;
+                  padding: 8px 12px;
                   color: #0066cc;
-                  box-shadow: 0 2px 8px rgba(179, 217, 255, 0.4);
-                  min-height: 50px;
+                  box-shadow: 0 1px 4px rgba(179, 217, 255, 0.3);
                   display: flex;
+                  flex-direction: column;
                   align-items: center;
                   justify-content: center;
                   border: 1px solid #cce7ff;
+                  gap: 2px;
                   
                   .user-display {
                     font-weight: 600;
-                    font-size: 16px;
+                    font-size: 13px;
                     text-align: center;
-                    line-height: 1.3;
+                    line-height: 1.2;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     max-width: 100%;
-                    letter-spacing: 0px;
+                  }
+
+                  .user-role {
+                    font-size: 11px;
+                    font-weight: 400;
+                    opacity: 0.8;
+                    text-align: center;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 100%;
                   }
                 }
 
-                              &.selected {
-                background: #f0f8ff;
-                border-color: #66b3ff;
+                &.selected {
+                  background: #f0f8ff;
+                  border-color: #66b3ff;
                   justify-content: space-between;
                   
                   .user-card-inline {
@@ -698,8 +819,9 @@ onMounted(() => {
                   
                   .remove-icon {
                     color: #d9d9d9;
-                    font-size: 16px;
+                    font-size: 14px;
                     transition: color 0.2s ease;
+                    flex-shrink: 0;
                     
                     &:hover {
                       color: #ff4d4f;
@@ -712,46 +834,19 @@ onMounted(() => {
                 }
               }
 
-              &.selected {
-                background: #e6f3ff;
-              }
-
               .empty-state {
                 text-align: center;
                 color: #999;
-                padding: 40px 15px;
-                font-size: 15px;
+                padding: 30px 15px;
+                font-size: 13px;
               }
             }
           }
 
-          .transfer-buttons {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 50px;
-            margin-top: 33px;
-            height: 420px;
-            padding: 0;
-            
-            .transfer-btn {
-              width: 40px;
-              height: 40px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              
-              .el-icon {
-                font-size: 16px;
-                font-weight: bold;
-              }
-              
-              &:hover:not(:disabled) {
-                transform: scale(1.1);
-                transition: transform 0.2s ease;
-              }
+          .selected-users-section {
+            .user-list {
+              background: #f8f9fa;
+              border-color: #e8f4f8;
             }
           }
         }
@@ -759,79 +854,109 @@ onMounted(() => {
 
       .assignment-controls {
         flex: 0 0 auto;
+
+        .el-button {
+          height: 48px;
+          font-size: 16px;
+          font-weight: 600;
+          
+          .el-icon {
+            margin-right: 6px;
+          }
+        }
+      }
+    }
+  }
+
+  // 响应式设计
+  @media (max-width: 1200px) {
+    .assignment-layout {
+      .left-panel {
+        width: 58%;
+      }
+      
+      .right-panel {
+        width: 42%;
+      }
+    }
+  }
+
+  @media (max-width: 992px) {
+    .assignment-layout {
+      flex-direction: column;
+      
+      .left-panel,
+      .right-panel {
+        width: 100%;
+      }
+
+      .right-panel {
+        .user-selection-card {
+          // 移动端保持flex布局，不设置固定高度
+        }
+        
+        .user-selection {
+          .user-list {
+            min-height: 200px; // 设置最小高度确保可用性
+          }
+        }
       }
     }
   }
 }
 
 :deep(.el-card) {
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e8eaec;
 }
 
 :deep(.el-card__header) {
-  padding: 14px 16px;
-  background: #fafafa;
-  border-bottom: 1px solid #ebeef5;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f1f3f5 100%);
+  border-bottom: 1px solid #e8eaec;
 }
 
 :deep(.el-card__body) {
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 :deep(.el-table .el-table__header th) {
-  background: #f5f7fa;
-  color: #606266;
-  font-weight: 500;
+  background: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
   padding: 8px 0;
+  font-size: 13px;
 }
 
 :deep(.el-table--enable-row-hover .el-table__body tr:hover > td) {
-  background-color: #f5f7fa;
+  background-color: #f8f9fa;
 }
 
 :deep(.el-table__body tr.current-row > td) {
-  background-color: #e6f3ff;
+  background-color: #e3f2fd;
 }
 
 :deep(.el-table .el-table__body td) {
   padding: 6px 0;
+  font-size: 13px;
 }
 
-:deep(.transfer-btn.el-button--primary) {
-  background-color: #0066cc;
-  border-color: #0066cc;
-  color: white;
-  
-  &:hover:not(:disabled) {
-    background-color: #0080ff;
-    border-color: #0080ff;
-  }
-  
-  &:disabled {
-    background-color: #66b3ff;
-    border-color: #66b3ff;
-    color: white;
-    cursor: not-allowed;
-  }
+:deep(.el-table--small .el-table__cell) {
+  padding: 4px 0;
 }
 
-:deep(.transfer-btn.el-button) {
-  background-color: white;
-  border-color: #dcdfe6;
-  color: #606266;
-  
-  &:hover:not(:disabled) {
-    background-color: #ecf5ff;
-    border-color: #409eff;
-    color: #409eff;
-  }
-  
-  &:disabled {
-    background-color: #f5f7fa;
-    border-color: #e4e7ed;
-    color: #c0c4cc;
-    cursor: not-allowed;
-  }
+:deep(.el-tag) {
+  border-radius: 12px;
+  font-size: 11px;
+  height: 20px;
+  line-height: 18px;
+  padding: 0 8px;
+}
+
+:deep(.el-button--small) {
+  height: 28px;
+  padding: 5px 10px;
+  font-size: 12px;
 }
 </style> 

@@ -17,7 +17,7 @@ from app.schemas.pdf import (
 from app.services.pdf_service import PDFService
 from app.config import settings
 
-router = APIRouter(prefix="/api/pdf", tags=["PDF预览"])
+router = APIRouter(prefix="/api/pdf")
 
 # 初始化PDF服务
 pdf_service = PDFService()

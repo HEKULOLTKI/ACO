@@ -61,6 +61,8 @@ class KnowledgeService:
         creator_id: Optional[int] = None
     ) -> List[KnowledgeBaseResponse]:
         """获取知识库列表"""
+        from app.models.user import User
+        
         query = self.db.query(KnowledgeBase)
         
         if category:
@@ -79,14 +81,27 @@ class KnowledgeService:
                 KnowledgeDocument.knowledge_base_id == kb.id
             ).count()
             
+            # 获取分配的工程师信息
+            engineer_name = None
+            engineer_photo = None
+            if kb.assigned_engineer_id:
+                engineer = self.db.query(User).filter(User.id == kb.assigned_engineer_id).first()
+                if engineer:
+                    engineer_name = engineer.username
+                    engineer_photo = engineer.photo_data
+            
             response = KnowledgeBaseResponse.from_orm(kb)
             response.document_count = document_count
+            response.assigned_engineer_name = engineer_name
+            response.assigned_engineer_photo = engineer_photo
             results.append(response)
         
         return results
     
     def get_knowledge_base_by_id(self, knowledge_base_id: int) -> KnowledgeBaseResponse:
         """根据ID获取知识库"""
+        from app.models.user import User
+        
         knowledge_base = self.db.query(KnowledgeBase).filter(
             KnowledgeBase.id == knowledge_base_id
         ).first()
@@ -98,8 +113,19 @@ class KnowledgeService:
             KnowledgeDocument.knowledge_base_id == knowledge_base_id
         ).count()
         
+        # 获取分配的工程师信息
+        engineer_name = None
+        engineer_photo = None
+        if knowledge_base.assigned_engineer_id:
+            engineer = self.db.query(User).filter(User.id == knowledge_base.assigned_engineer_id).first()
+            if engineer:
+                engineer_name = engineer.username
+                engineer_photo = engineer.photo_data
+        
         response = KnowledgeBaseResponse.from_orm(knowledge_base)
         response.document_count = document_count
+        response.assigned_engineer_name = engineer_name
+        response.assigned_engineer_photo = engineer_photo
         return response
     
     def update_knowledge_base(
@@ -203,12 +229,21 @@ class KnowledgeService:
             db_document.file_type = file.content_type
             db_document.file_size = len(content)
             
+            # 文件上传成功后设置状态
+            db_document.parse_status = 'success'
+            db_document.is_processed = True
+            
             # 如果是文本文件，尝试读取内容
             if file.content_type.startswith('text/'):
                 try:
                     db_document.content = content.decode('utf-8')
                 except:
                     pass
+        else:
+            # 如果没有文件但有内容，也设置为成功
+            if db_document.content:
+                db_document.parse_status = 'success'
+                db_document.is_processed = True
         
         self.db.add(db_document)
         self.db.commit()

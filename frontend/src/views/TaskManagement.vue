@@ -69,33 +69,11 @@
           <el-table-column prop="phase" label="阶段" width="100" />
           <el-table-column prop="description" label="任务描述" show-overflow-tooltip min-width="150" />
           <el-table-column prop="role_binding" label="绑定角色" width="120" />
-          <el-table-column label="执行角色" width="200">
-            <template #default="scope">
-              <div v-if="scope.row.assignments && scope.row.assignments.length > 0" class="user-cards">
-                <div 
-                  v-for="assignment in scope.row.assignments" 
-                  :key="assignment.username"
-                  class="user-card"
-                >
-                  <div class="user-name">{{ assignment.username }}</div>
-                  <div class="user-role">{{ getUserRole(assignment.username) }}</div>
-                </div>
-              </div>
-              <el-tag v-else type="info" size="small">未分配</el-tag>
-            </template>
-          </el-table-column>
-        <el-table-column prop="create_time" label="创建时间" width="150" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column prop="create_time" label="创建时间" width="180" />
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">
               编辑
-            </el-button>
-            <el-button 
-              size="small" 
-              type="primary" 
-              @click="handlePreviewReport(scope.row)"
-            >
-              预览报告
             </el-button>
             <el-button 
               size="small" 

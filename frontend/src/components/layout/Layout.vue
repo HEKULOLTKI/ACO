@@ -31,24 +31,27 @@
       <div class="header-right">
         <div class="header-actions">
           
-          <el-tooltip content="通知" placement="bottom">
+          <el-tooltip content="通知消息" placement="bottom" effect="dark">
             <div class="action-btn notification-btn" @click="handleNotification">
               <img src="@/assets/icon/组 3000.png" alt="通知" class="action-icon" />
+              <span class="action-label">通知</span>
               <span class="notification-badge" v-if="notificationCount > 0">
                 {{ notificationCount > 99 ? '99+' : notificationCount }}
               </span>
             </div>
           </el-tooltip>
           
-          <el-tooltip content="帮助" placement="bottom">
+          <el-tooltip content="帮助文档" placement="bottom" effect="dark">
             <div class="action-btn" @click="handleHelp">
               <img src="@/assets/icon/路径 1998.png" alt="帮助" class="action-icon" />
+              <span class="action-label">帮助</span>
             </div>
           </el-tooltip>
           
-          <el-tooltip content="设置" placement="bottom">
+          <el-tooltip content="系统设置" placement="bottom" effect="dark">
             <div class="action-btn" @click="handleSettings">
               <img src="@/assets/icon/设置 (1).png" alt="设置" class="action-icon" />
+              <span class="action-label">设置</span>
             </div>
           </el-tooltip>
         </div>
@@ -139,22 +142,22 @@
         
         <div 
           class="nav-item" 
+          :class="{ active: $route.path === '/knowledge' }" 
+          @click="$router.push('/knowledge')"
+          v-if="userStore.isAdmin"
+        >
+          <img src="@/assets/icon/组 3261.png" alt="AI知识库" class="nav-icon-img" />
+          <span class="nav-text">AI知识库</span>
+        </div>
+        
+        <div 
+          class="nav-item" 
           :class="{ active: $route.path === '/settings' }" 
           @click="$router.push('/settings')"
           v-if="userStore.isAdmin"
         >
           <img src="@/assets/icon/系统参数.png" alt="系统设置" class="nav-icon-img" />
           <span class="nav-text">系统设置</span>
-        </div>
-        
-        <div 
-          class="nav-item" 
-          :class="{ active: $route.path === '/knowledge' }" 
-          @click="$router.push('/knowledge')"
-          v-if="userStore.isAdmin"
-        >
-          <img src="@/assets/icon/组 3000.png" alt="AI知识库" class="nav-icon-img" />
-          <span class="nav-text">AI知识库</span>
         </div>
       </nav>
     </aside>
@@ -346,62 +349,81 @@ const handleSettings = () => {
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-right: 16px;
+    gap: 20px;
+    margin-right: 24px;
     
     .action-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
+      flex-direction: column;
+      min-width: 60px;
+      height: 48px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       color: rgba(255, 255, 255, 0.8);
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       position: relative;
+      padding: 8px 12px;
       
       &:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.18);
         color: white;
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
       
       .el-icon {
-        font-size: 16px;
+        font-size: 18px;
       }
       
       .action-icon {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         object-fit: contain;
         filter: brightness(0) invert(1);
-        opacity: 0.8;
-        transition: opacity 0.3s ease;
+        opacity: 0.85;
+        transition: all 0.3s ease;
+        margin-bottom: 2px;
+      }
+      
+      .action-label {
+        font-size: 11px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.7);
+        white-space: nowrap;
+        margin-top: 2px;
+        transition: all 0.3s ease;
       }
       
       &:hover .action-icon {
         opacity: 1;
+        transform: scale(1.1);
+      }
+      
+      &:hover .action-label {
+        color: white;
       }
       
       &.notification-btn {
         .notification-badge {
           position: absolute;
-          top: -4px;
-          right: -4px;
+          top: -2px;
+          right: -2px;
           background: #e74c3c;
           color: white;
           font-size: 10px;
-          padding: 1px 5px;
-          border-radius: 8px;
-          min-width: 16px;
-          height: 16px;
+          padding: 2px 6px;
+          border-radius: 10px;
+          min-width: 18px;
+          height: 18px;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 600;
           line-height: 1;
+          box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
         }
       }
     }
@@ -585,6 +607,30 @@ const handleSettings = () => {
 }
 
 /* 响应式设计 */
+@media (min-width: 1440px) {
+  .header-right .header-actions {
+    gap: 24px;
+    margin-right: 32px;
+    
+    .action-btn {
+      min-width: 70px;
+      height: 52px;
+      padding: 10px 14px;
+      
+      .action-label {
+        font-size: 12px;
+        margin-top: 3px;
+      }
+      
+      .action-icon {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 3px;
+      }
+    }
+  }
+}
+
 @media (max-width: 1024px) {
   .layout-container {
     grid-template-areas: 
@@ -603,15 +649,26 @@ const handleSettings = () => {
   }
   
   .header-right .header-actions {
-    gap: 6px;
-    margin-right: 12px;
+    gap: 12px;
+    margin-right: 16px;
     
     .action-btn {
-      width: 32px;
-      height: 32px;
+      min-width: 40px;
+      height: 40px;
+      padding: 6px 8px;
+      
+      .action-label {
+        display: none;
+      }
+      
+      .action-icon {
+        width: 16px;
+        height: 16px;
+        margin-bottom: 0;
+      }
       
       .el-icon {
-        font-size: 14px;
+        font-size: 16px;
       }
     }
   }
@@ -632,15 +689,26 @@ const handleSettings = () => {
   }
   
   .header-right .header-actions {
-    gap: 4px;
-    margin-right: 8px;
+    gap: 8px;
+    margin-right: 12px;
     
     .action-btn {
-      width: 28px;
-      height: 28px;
+      min-width: 36px;
+      height: 36px;
+      padding: 4px 6px;
+      
+      .action-label {
+        display: none;
+      }
+      
+      .action-icon {
+        width: 14px;
+        height: 14px;
+        margin-bottom: 0;
+      }
       
       .el-icon {
-        font-size: 12px;
+        font-size: 14px;
       }
     }
   }
@@ -667,8 +735,36 @@ const handleSettings = () => {
   }
   
   .header-right .header-actions {
-    .action-btn:not(.notification-btn) {
-      display: none;
+    gap: 6px;
+    margin-right: 8px;
+    
+    .action-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 3px 4px;
+      
+      .action-label {
+        display: none;
+      }
+      
+      .action-icon {
+        width: 12px;
+        height: 12px;
+      }
+      
+      &:not(.notification-btn) {
+        display: none;
+      }
+      
+      &.notification-btn {
+        .notification-badge {
+          top: -1px;
+          right: -1px;
+          min-width: 14px;
+          height: 14px;
+          font-size: 9px;
+        }
+      }
     }
   }
 }
