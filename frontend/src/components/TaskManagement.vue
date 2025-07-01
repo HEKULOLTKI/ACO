@@ -242,13 +242,23 @@
             <el-option label="已取消" value="已取消" />
           </el-select>
         </el-form-item>
-        <el-form-item label="性能评分" prop="performance_score">
+        <el-form-item label="绩效评分" prop="performance_score">
           <el-input-number
             v-model="progressForm.performance_score"
             :min="0"
-            :max="100"
+            :max="getMaxScore()"
             style="width: 100%"
-          />
+          >
+            <template #append>分</template>
+          </el-input-number>
+          <div class="form-tip">
+            <span v-if="progressForm.progress < 100" class="tip-text">
+              提示：进度未达到100%时，绩效评分最高为 {{ progressForm.progress }} 分
+            </span>
+            <span v-else-if="progressForm.status === '已完成'" class="tip-success">
+              提示：任务完成且进度100%，可获得满分100分
+            </span>
+          </div>
         </el-form-item>
         <el-form-item label="备注" prop="comments">
           <el-input
@@ -288,7 +298,8 @@ import {
   type Task,
   type TaskAssignment
 } from '@/api/task'
-import { getUsers, type User } from '@/api/user'
+import { getUsers } from '@/api/user'
+import type { User } from '@/types/user'
 
 // 弹窗显示状态
 const createTaskVisible = ref(false)
@@ -350,7 +361,31 @@ const assignRules: FormRules = {
 
 const progressRules: FormRules = {
   progress: [{ required: true, message: '请设置进度', trigger: 'blur' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }],
+  performance_score: [
+    { 
+      validator: (rule: any, value: number, callback: any) => {
+        if (value < 0) {
+          callback(new Error('绩效评分不能小于0'))
+        } else if (progressForm.progress < 100 && value > progressForm.progress) {
+          callback(new Error(`进度未达到100%时，绩效评分不能超过${progressForm.progress}分`))
+        } else if (value > 100) {
+          callback(new Error('绩效评分不能超过100分'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'blur' 
+    }
+  ]
+}
+
+// 获取绩效评分的最大值
+const getMaxScore = () => {
+  if (progressForm.progress < 100) {
+    return progressForm.progress
+  }
+  return 100
 }
 
 // 计算属性
@@ -413,7 +448,7 @@ const handleTaskSelection = (selection: Task[]) => {
 }
 
 const handleUserChange = (username: string) => {
-  const user = userList.value.find(u => u.username === username)
+  const user = userList.value.find((u: User) => u.username === username)
   if (user) {
     assignForm.user_id = user.id
   }
@@ -623,5 +658,20 @@ defineExpose({
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+// 表单提示样式
+.form-tip {
+  margin-top: 5px;
+  
+  .tip-text {
+    font-size: 12px;
+    color: #e6a23c;
+  }
+  
+  .tip-success {
+    font-size: 12px;
+    color: #67c23a;
+  }
 }
 </style> 

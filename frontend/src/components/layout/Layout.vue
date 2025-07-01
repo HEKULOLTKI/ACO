@@ -4,7 +4,6 @@
     <header class="layout-header">
       <div class="header-left">
         <div class="logo-container">
-          
           <div class="logo">
             <div class="logo-icon">
               <!-- 图片3000.png -->
@@ -50,7 +49,7 @@
           
           <el-tooltip content="系统设置" placement="bottom" effect="dark">
             <div class="action-btn" @click="handleSettings">
-              <img src="@/assets/icon/设置 (1).png" alt="设置" class="action-icon" />
+              <img src="@/assets/icon/系统参数.png" alt="设置" class="action-icon" />
               <span class="action-label">设置</span>
             </div>
           </el-tooltip>

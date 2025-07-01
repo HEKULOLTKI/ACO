@@ -43,7 +43,7 @@
           <div class="image-stats">
             <!-- 图片 -->
             <span class="stat-item stat-blue"> <img src="@/assets/icon/组 3695.png" alt="running" class="stat-icon"> {{ getStatusCount('running') }}个</span>
-            <span class="stat-item stat-red"> <img src="@/assets/icon/组 3695 (1).png" alt="error" class="stat-icon"> {{ getStatusCount('error') }}个</span>
+            <span class="stat-item stat-red"> <img src="@/assets/icon/组 3695 (2).png" alt="error" class="stat-icon"> {{ getStatusCount('error') }}个</span>
           </div>
         </div>
 

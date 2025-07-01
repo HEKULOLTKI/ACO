@@ -159,13 +159,10 @@
           </el-table-column>
           <el-table-column prop="performance_score" label="绩效评分" width="120">
             <template #default="scope">
-              <el-rate 
-                v-model="scope.row.performance_score" 
-                :max="5" 
-                disabled 
-                show-score
-                text-color="#ff9900"
-              />
+              <div class="performance-score">
+                <span class="score-value">{{ scope.row.performance_score }}</span>
+                <span class="score-unit">分</span>
+              </div>
             </template>
           </el-table-column>
           <el-table-column prop="assigned_at" label="分配时间" width="150" />
@@ -237,7 +234,7 @@
                 :stroke-width="20"
               />
               <span class="progress-text">进度{{ currentTask.progress }}%</span>
-              <span class="performance-text">平均绩效: {{ Math.round(currentTask.performance_score * 920) }}万</span>
+              <span class="performance-text">绩效评分: {{ currentTask.performance_score }}分</span>
             </div>
           </div>
         </div>
@@ -332,7 +329,24 @@
           />
         </el-form-item>
         <el-form-item label="绩效评分" prop="performance_score">
-          <el-rate v-model="progressManagementForm.performance_score" :max="5" show-text />
+          <el-input-number 
+            v-model="progressManagementForm.performance_score" 
+            :min="0" 
+            :max="getMaxPerformanceScore()" 
+            :step="1"
+            style="width: 100%"
+            placeholder="请输入绩效评分"
+          >
+            <template #append>分</template>
+          </el-input-number>
+          <div class="form-tip">
+            <span v-if="progressManagementForm.progress < 100" class="tip-text">
+              提示：进度未达到100%时，绩效评分最高为 {{ progressManagementForm.progress }} 分
+            </span>
+            <span v-else-if="progressManagementForm.status === '已完成'" class="tip-success">
+              提示：任务完成且进度100%，可获得满分100分
+            </span>
+          </div>
         </el-form-item>
         <el-form-item label="备注说明" prop="comments">
           <el-input 
@@ -566,8 +580,29 @@ const progressManagementRules = {
   ],
   performance_score: [
     { required: true, message: '请设置绩效评分', trigger: 'change' },
-    { type: 'number', min: 0, max: 5, message: '绩效评分范围为0-5', trigger: 'change' }
+    { 
+      validator: (rule: any, value: number, callback: any) => {
+        if (value < 0) {
+          callback(new Error('绩效评分不能小于0'))
+        } else if (progressManagementForm.progress < 100 && value > progressManagementForm.progress) {
+          callback(new Error(`进度未达到100%时，绩效评分不能超过${progressManagementForm.progress}分`))
+        } else if (value > 100) {
+          callback(new Error('绩效评分不能超过100分'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'blur' 
+    }
   ]
+}
+
+// 获取绩效评分的最大值
+const getMaxPerformanceScore = () => {
+  if (progressManagementForm.progress < 100) {
+    return progressManagementForm.progress
+  }
+  return 100
 }
 
 const getStatusType = (status: string) => {
@@ -1548,6 +1583,40 @@ onMounted(() => {
         color: #909399;
         font-size: 14px;
       }
+    }
+  }
+  
+  // 绩效评分显示样式
+  .performance-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    
+    .score-value {
+      font-weight: bold;
+      font-size: 16px;
+      color: #409eff;
+    }
+    
+    .score-unit {
+      font-size: 12px;
+      color: #909399;
+    }
+  }
+  
+  // 表单提示样式
+  .form-tip {
+    margin-top: 5px;
+    
+    .tip-text {
+      font-size: 12px;
+      color: #e6a23c;
+    }
+    
+    .tip-success {
+      font-size: 12px;
+      color: #67c23a;
     }
   }
 }

@@ -10,55 +10,63 @@
       </div>
     </div>
     
-    <!-- 顶部信息栏 - 炫酷科技样式 -->
-    <div class="top-bar">
-      <div class="top-bar-background">
-        <div class="top-bar-glow"></div>
-        <div class="top-bar-lines">
-          <div class="line line-left"></div>
-          <div class="line line-right"></div>
-            </div>
-        <div class="top-bar-particles"></div>
-          </div>
+    <!-- 现代化顶部导航栏 -->
+    <div class="modern-header">
+      <div class="header-blur-bg"></div>
+      <div class="header-border"></div>
       
-      <div class="top-bar-content">
-        <div class="datetime">
-          <div class="datetime-glow"></div>
-          <span class="datetime-text">{{ currentDateTime }}</span>
+      <div class="header-content">
+        <!-- 左侧时间显示 -->
+        <div class="time-display">
+          <div class="time-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="time-text">{{ currentDateTime }}</span>
         </div>
         
-        <div class="system-title">
-          <div class="title-glow-bg"></div>
-          <span class="title-text">分布式一体化协作平台</span>
-          <div class="title-decorations">
-            <div class="deco-left"></div>
-            <div class="deco-right"></div>
+        <!-- 中央标题 -->
+        <div class="header-title">
+          <div class="title-main">
+            <span class="title-highlight">分布式</span>
+            <span class="title-normal">一体化协作平台</span>
           </div>
+          <div class="title-subtitle">Distributed Collaborative Platform</div>
         </div>
         
-        <div class="admin-info">
-          <div class="admin-container">
-            <div class="admin-icon-wrapper">
-              <div class="icon-glow-ring"></div>
-              <el-icon class="admin-icon">👤</el-icon>
+        <!-- 右侧用户区域 -->
+        <div class="user-section">
+          <div class="user-profile">
+                         <div class="user-avatar">
+               <img src="@/assets/头像.svg" alt="用户" class="avatar-icon" />
             </div>
-            <span class="admin-text">{{ authStore.user?.username || 'Admin' }}</span>
-            <div class="admin-actions">
-              <div class="action-btn">
-                <div class="btn-glow"></div>
-                <span>🔧</span>
-              </div>
-              <div class="action-btn">
-                <div class="btn-glow"></div>
-                <span>⚙️</span>
-              </div>
-              <div class="action-btn logout-btn" @click="goBack" title="返回登录">
-                <div class="btn-glow"></div>
-                <span>🚪</span>
-              </div>
+            <div class="user-info">
+              <span class="username">{{ authStore.user?.username || 'Admin' }}</span>
+              <span class="user-role">{{ authStore.user?.role || '管理员' }}</span>
             </div>
           </div>
+          
+                     <div class="action-buttons">
+             <button class="action-button" title="设置">
+               <img src="@/assets/设置.svg" alt="设置" class="button-icon" />
+             </button>
+             <button class="action-button logout" @click="goBack" title="退出">
+               <img src="@/assets/退出.svg" alt="退出" class="button-icon" />
+             </button>
+           </div>
         </div>
+      </div>
+      
+      <!-- 装饰性科技元素 -->
+      <div class="tech-elements">
+        <div class="tech-dots">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <div class="scanning-line"></div>
       </div>
     </div>
 
@@ -227,25 +235,36 @@ const selectRole = (role: string) => {
   sendUserDataJson()
 }
 
-// 获取指示点位置
+// 获取指示点位置 - 适应网格布局
 const getArrowPosition = () => {
   if (!selectedRole.value) return { display: 'none' }
   
   const selectedIndex = roleOptions.findIndex(role => role.value === selectedRole.value)
   if (selectedIndex === -1) return { display: 'none' }
   
-  // 计算指示点位置，基于卡片间距和索引
-  const cardWidth = 320
-  const cardGap = 40
-  const totalCards = roleOptions.length
-  const totalWidth = totalCards * cardWidth + (totalCards - 1) * cardGap
+  // 根据屏幕宽度获取当前网格列数
+  const getGridColumns = () => {
+    const width = window.innerWidth
+    if (width <= 480) return 1      // 超小屏幕：1列
+    if (width <= 768) return 2      // 手机：2列
+    if (width <= 1200) return 3     // 平板：3列
+    if (width <= 1400) return 4     // 中等屏幕：4列
+    return 5                        // 大屏幕：5列
+  }
   
-  // 计算起始位置（第一个卡片的中心位置）
-  const containerCenter = 0
-  const firstCardCenter = containerCenter - (totalWidth / 2) + (cardWidth / 2)
+  const columns = getGridColumns()
+  const cardWidth = 280
+  const gap = 55
   
-  // 计算选中卡片的中心位置
-  const selectedCardCenter = firstCardCenter + selectedIndex * (cardWidth + cardGap)
+  // 计算选中卡片在当前行中的列位置（0开始）
+  const columnIndex = selectedIndex % columns
+  
+  // 计算网格容器的总宽度
+  const gridWidth = columns * cardWidth + (columns - 1) * gap
+  
+  // 计算选中卡片在当前行中的位置
+  const firstCardCenter = -(gridWidth / 2) + (cardWidth / 2)
+  const selectedCardCenter = firstCardCenter + columnIndex * (cardWidth + gap)
   
   return {
     left: `calc(50% + ${selectedCardCenter}px)`,
@@ -542,6 +561,18 @@ onMounted(() => {
   // 启动时间更新
   updateDateTime()
   setInterval(updateDateTime, 1000)
+  
+  // 监听窗口大小变化，重新计算指示器位置
+  window.addEventListener('resize', () => {
+    // 触发响应式更新，让指示器位置重新计算
+    if (selectedRole.value) {
+      const currentRole = selectedRole.value
+      selectedRole.value = ''
+      setTimeout(() => {
+        selectedRole.value = currentRole
+      }, 50)
+    }
+  })
 })
 </script>
 
@@ -642,15 +673,15 @@ onMounted(() => {
   animation: gridMove 30s linear infinite;
 }
 
-/* 顶部栏 - 重新设计的炫酷科技样式 */
-.top-bar {
+/* 现代化顶部导航栏 */
+.modern-header {
   position: relative;
   z-index: 100;
-  height: 100px;
+  height: 80px;
   overflow: hidden;
 }
 
-.top-bar-background {
+.header-blur-bg {
   position: absolute;
   top: 0;
   left: 0;
@@ -658,340 +689,290 @@ onMounted(() => {
   height: 100%;
   background: linear-gradient(
     135deg,
-    rgba(0, 20, 60, 0.98) 0%,
-    rgba(0, 40, 100, 0.99) 20%,
-    rgba(0, 60, 140, 0.98) 40%,
-    rgba(0, 80, 160, 0.99) 60%,
-    rgba(0, 60, 140, 0.98) 80%,
-    rgba(0, 20, 60, 0.98) 100%
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(30, 41, 59, 0.90) 50%,
+    rgba(15, 23, 42, 0.95) 100%
   );
-  backdrop-filter: blur(20px);
-  border-bottom: 4px solid rgba(0, 255, 255, 0.6);
-  box-shadow: 
-    0 8px 40px rgba(0, 255, 255, 0.4),
-    inset 0 3px 0 rgba(255, 255, 255, 0.15),
-    inset 0 -3px 0 rgba(0, 255, 255, 0.3);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-.top-bar-glow {
+.header-border {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 255, 255, 0.1),
-    rgba(0, 255, 255, 0.3),
-    rgba(0, 255, 255, 0.1)
-  );
-  animation: topBarGlow 4s ease-in-out infinite alternate;
-}
-
-.top-bar-lines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.line {
-  position: absolute;
-  top: 50%;
-      width: 200px;
   height: 2px;
   background: linear-gradient(
     90deg,
-    transparent,
-    rgba(0, 255, 255, 0.8),
-    transparent
+    transparent 0%,
+    rgba(59, 130, 246, 0.5) 30%,
+    rgba(59, 130, 246, 0.8) 50%,
+    rgba(59, 130, 246, 0.5) 70%,
+    transparent 100%
   );
-  animation: linePulse 3s ease-in-out infinite;
+  animation: borderFlow 3s ease-in-out infinite;
 }
 
-.line-left {
-  left: 50px;
-  transform: translateY(-50%) rotate(-15deg);
-  animation-delay: 0s;
-}
-
-.line-right {
-  right: 50px;
-  transform: translateY(-50%) rotate(15deg);
-  animation-delay: 1.5s;
-}
-
-.top-bar-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(1px 1px at 10% 20%, rgba(0, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 90% 80%, rgba(255, 255, 255, 0.4), transparent),
-    radial-gradient(1px 1px at 70% 30%, rgba(0, 255, 255, 0.5), transparent);
-  background-size: 100px 100px;
-  animation: particlesMove 20s linear infinite;
-}
-
-.top-bar-content {
+.header-content {
   position: relative;
   z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 40px;
+  padding: 0 32px;
   height: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-.datetime {
-  position: relative;
+/* 时间显示 */
+.time-display {
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  transition: all 0.3s ease;
 }
 
-.datetime-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120px;
-  height: 40px;
-  background: radial-gradient(
-    ellipse,
-    rgba(0, 255, 255, 0.3),
-    transparent 70%
-  );
-  filter: blur(8px);
-  animation: dateTimeGlow 2s ease-in-out infinite alternate;
+.time-display:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
-.datetime-text {
-  position: relative;
-  z-index: 2;
-  font-size: 18px;
-  font-weight: 700;
-  color: #00ffff;
-  text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
-  letter-spacing: 1px;
+.time-icon {
+  display: flex;
+  align-items: center;
+  color: rgba(59, 130, 246, 0.8);
+  animation: clockTick 2s ease-in-out infinite;
 }
 
-.system-title {
-  position: relative;
-  text-align: center;
+.time-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+  font-family: 'Roboto Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+/* 标题区域 */
+.header-title {
   flex: 1;
-  margin: 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 0 32px;
 }
 
-.title-glow-bg {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  height: 60px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 255, 255, 0.2),
-    rgba(0, 150, 255, 0.3),
-    rgba(0, 255, 255, 0.2),
-    transparent
-  );
-  filter: blur(15px);
-  animation: titleBgPulse 3s ease-in-out infinite alternate;
-}
-
-.title-text {
-  position: relative;
-  z-index: 2;
-  font-size: 36px;
-  font-weight: 900;
-  color: #ffffff;
-  text-shadow: 
-    0 0 30px rgba(0, 255, 255, 1),
-    0 0 60px rgba(0, 255, 255, 0.8),
-    0 0 90px rgba(0, 255, 255, 0.4),
-    0 0 120px rgba(0, 255, 255, 0.2);
-  letter-spacing: 4px;
-  animation: titleTextGlow 4s ease-in-out infinite alternate;
-  background: linear-gradient(
-    45deg,
-    #ffffff,
-    #00ffff,
-    #ffffff,
-    #00ffff
-  );
-  background-size: 400% 400%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: titleTextGlow 4s ease-in-out infinite alternate,
-            titleGradient 6s ease-in-out infinite;
-}
-
-.title-decorations {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-}
-
-.deco-left, .deco-right {
-  position: absolute;
-  top: 50%;
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 255, 255, 0.8),
-    transparent
-  );
-}
-
-.deco-left {
-  left: -100px;
-  transform: translateY(-50%);
-  animation: decoSlideLeft 2s ease-in-out infinite alternate;
-}
-
-.deco-right {
-  right: -100px;
-  transform: translateY(-50%) rotate(180deg);
-  animation: decoSlideRight 2s ease-in-out infinite alternate;
-}
-
-.admin-info {
-  position: relative;
-}
-
-.admin-container {
+.title-main {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 
-.admin-icon-wrapper {
-  position: relative;
-  width: 45px;
-  height: 45px;
+.title-highlight {
+  font-size: 24px;
+  font-weight: 700;
+  color: #3b82f6;
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+.title-normal {
+  font-size: 24px;
+  font-weight: 600;
+  color: #f1f5f9;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.title-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* 用户区域 */
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  transition: all 0.3s ease;
+}
+
+.user-profile:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(0, 255, 255, 0.3),
-    rgba(0, 100, 200, 0.2),
-    transparent
-  );
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(0, 255, 255, 0.4);
-  backdrop-filter: blur(5px);
+  padding: 6px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
 }
 
-.icon-glow-ring {
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  border-radius: 50%;
-  border: 2px solid rgba(0, 255, 255, 0.6);
-  animation: iconRingPulse 2s ease-in-out infinite;
+.user-avatar:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
 }
 
-.admin-icon {
-  font-size: 22px;
-  color: #00ffff;
-  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+.avatar-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) saturate(100%) invert(100%);
 }
 
-.admin-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
-}
-
-.admin-actions {
+.user-info {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.action-btn {
-  position: relative;
+.username {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  line-height: 1;
+}
+
+.user-role {
+  font-size: 12px;
+  font-weight: 400;
+  color: #94a3b8;
+  line-height: 1;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* 操作按钮 */
+.action-button {
   width: 36px;
   height: 36px;
-  border-radius: 6px;
-  background: rgba(0, 255, 255, 0.1);
-  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
-  overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
-.btn-glow {
+.action-button:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.button-icon {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) saturate(100%) invert(64%) sepia(11%) saturate(1015%) hue-rotate(185deg) brightness(94%) contrast(86%);
+  transition: all 0.3s ease;
+}
+
+.action-button:hover .button-icon {
+  filter: brightness(0) saturate(100%) invert(44%) sepia(78%) saturate(2476%) hue-rotate(214deg) brightness(97%) contrast(91%);
+}
+
+/* 退出按钮特殊样式 */
+.action-button.logout {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.action-button.logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.action-button.logout .button-icon {
+  filter: brightness(0) saturate(100%) invert(38%) sepia(79%) saturate(1945%) hue-rotate(331deg) brightness(94%) contrast(94%);
+}
+
+.action-button.logout:hover .button-icon {
+  filter: brightness(0) saturate(100%) invert(25%) sepia(95%) saturate(4713%) hue-rotate(348deg) brightness(96%) contrast(96%);
+}
+
+/* 科技装饰元素 */
+.tech-elements {
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tech-dots {
+  position: absolute;
+  top: 50%;
+  right: 48px;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.6);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.scanning-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
   background: linear-gradient(
-    45deg,
-    rgba(0, 255, 255, 0.4),
-    rgba(0, 150, 255, 0.6),
-    rgba(0, 255, 255, 0.4)
+    90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.8) 50%,
+    transparent 100%
   );
-  border-radius: 8px;
-    opacity: 0;
-  transition: opacity 0.3s ease;
-  filter: blur(4px);
-}
-
-.action-btn span {
-  position: relative;
-  z-index: 2;
-  font-size: 16px;
-}
-
-.action-btn:hover {
-  background: rgba(0, 255, 255, 0.2);
-  border-color: rgba(0, 255, 255, 0.6);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-  transform: scale(1.1);
-}
-
-.action-btn:hover .btn-glow {
-    opacity: 1;
-}
-
-/* 退出登录按钮特殊样式 */
-.logout-btn {
-  background: rgba(255, 100, 100, 0.1) !important;
-  border-color: rgba(255, 100, 100, 0.3) !important;
-}
-
-.logout-btn .btn-glow {
-  background: linear-gradient(
-    45deg,
-    rgba(255, 100, 100, 0.4),
-    rgba(255, 150, 100, 0.6),
-    rgba(255, 100, 100, 0.4)
-  ) !important;
-}
-
-.logout-btn:hover {
-  background: rgba(255, 100, 100, 0.2) !important;
-  border-color: rgba(255, 100, 100, 0.6) !important;
-  box-shadow: 0 0 20px rgba(255, 100, 100, 0.5) !important;
+  animation: scanningMove 4s ease-in-out infinite;
 }
 
 /* 底部平台 */
@@ -1101,56 +1082,165 @@ onMounted(() => {
 }
 
 .roles-grid {
-  display: flex;
-  /* 📏 修改卡片间距 */
-  gap: 40px;      /* 卡片之间的间距 - 调整此值改变卡片间距 */
+  display: grid;
+  /* 🎯 网格布局 - 5列网格，每列自适应内容大小 */
+  grid-template-columns: repeat(5, minmax(280px, 1fr));
+  gap: 55px;      /* 网格间距 - 行间距和列间距 */
   justify-content: center;
-  align-items: flex-end;
-  flex-wrap: nowrap;
-  max-width: 1800px;
+  justify-items: center;  /* 水平居中每个网格项 */
+  align-items: end;       /* 垂直底部对齐 */
+  max-width: 1900px;
   perspective: 1200px;
+  margin: 0 auto;         /* 整个网格容器居中 */
+  
+  /* 🎬 网格布局过渡动画 */
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* 角色卡片 */
+/* 角色卡片 - 网格布局优化 */
 .role-card {
   position: relative;
-  /* 📦 修改卡片大小 - 主要尺寸设置 */
-  width: 280px;   /* 卡片宽度 - 调整此值改变卡片宽度 */
-  height: 340px;  /* 卡片高度 - 调整此值改变卡片高度 */
+  /* 📦 网格布局中的卡片尺寸 */
+  width: 280px;   /* 卡片宽度 */
+  height: 340px;  /* 卡片高度 */
   cursor: pointer;
   transform-style: preserve-3d;
-  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-origin: center center;
+  will-change: transform;
+  
+  /* 🎯 网格项动画效果 */
+  opacity: 0;
+  transform: translateY(50px) scale(0.8);
+  animation: gridItemFadeIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
 }
 
+/* 为每个卡片添加不同的延迟 */
+.role-card:nth-child(1) { animation-delay: 0.1s; }
+.role-card:nth-child(2) { animation-delay: 0.2s; }
+.role-card:nth-child(3) { animation-delay: 0.3s; }
+.role-card:nth-child(4) { animation-delay: 0.4s; }
+.role-card:nth-child(5) { animation-delay: 0.5s; }
+
+/* 悬浮时的流动边框效果 */
 .role-card:hover {
-  transform: translateY(-15px) scale(1.08);
+  z-index: 10;  /* 确保悬浮卡片在最上层 */
+  transition: all 0.4s ease;
 }
 
 .role-card.selected {
-  transform: translateY(-20px) scale(1.1);
+  z-index: 15;
+}
+
+/* 添加科技风流动边框效果 */
+.role-card:hover::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 255, 255, 0.8),
+    rgba(0, 150, 255, 1),
+    rgba(100, 200, 255, 0.8),
+    rgba(0, 255, 255, 1),
+    rgba(0, 150, 255, 0.6),
+    rgba(255, 255, 255, 0.9),
+    rgba(0, 255, 255, 0.8)
+  );
+  background-size: 300% 100%;
+  border-radius: 12px;
+  z-index: -1;
+  animation: techFlowingBorder 2s linear infinite;
+  filter: blur(1px);
+}
+
+/* 添加内层流动线条 */
+.role-card:hover::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(0, 255, 255, 0.6),
+    transparent,
+    rgba(0, 150, 255, 0.8),
+    transparent,
+    rgba(0, 255, 255, 0.6),
+    transparent
+  );
+  background-size: 200% 200%;
+  border-radius: 10px;
+  z-index: -1;
+  animation: techInnerFlow 1.5s linear infinite reverse;
+}
+
+/* 科技风流动边框动画 */
+@keyframes techFlowingBorder {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 300% 0%;
+  }
+}
+
+/* 内层流动动画 */
+@keyframes techInnerFlow {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 200%;
+  }
 }
 
 .card-glow {
   position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
   background: linear-gradient(
     45deg,
-    rgba(0, 255, 255, 0.2),
-    rgba(0, 150, 255, 0.3),
-    rgba(0, 255, 255, 0.2)
+    rgba(0, 255, 255, 0.4),
+    rgba(0, 150, 255, 0.6),
+    rgba(255, 100, 200, 0.4),
+    rgba(0, 255, 255, 0.4)
   );
-  border-radius: 12px;
+  background-size: 400% 400%;
+  border-radius: 16px;
   opacity: 0;
-  transition: all 0.5s ease;
-  filter: blur(8px);
+  transition: all 0.6s ease;
+  filter: blur(12px);
+  animation: glowGradientShift 3s ease-in-out infinite;
+}
+
+/* 悬浮时关闭原有发光效果，使用流动边框 */
+.role-card:hover .card-glow {
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 
 .card-glow.active {
   opacity: 1;
-  animation: cardPulse 2s ease-in-out infinite;
+  animation: cardPulse 2s ease-in-out infinite, glowGradientShift 3s ease-in-out infinite;
+}
+
+/* 渐变色动画 */
+@keyframes glowGradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .card-inner {
@@ -1179,11 +1269,19 @@ onMounted(() => {
 }
 
 .role-card:hover .card-inner {
-  border-color: rgba(0, 255, 255, 0.6);
+  border-color: rgba(0, 255, 255, 0.9);
+  border-width: 2px;
+  background: linear-gradient(
+    145deg,
+    rgba(15, 45, 95, 0.98),
+    rgba(25, 75, 145, 0.95),
+    rgba(15, 45, 95, 0.98)
+  );
   box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.6),
+    0 15px 35px rgba(0, 0, 0, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 0 30px rgba(0, 255, 255, 0.3);
+    inset 0 0 10px rgba(0, 255, 255, 0.1);
+  transition: all 0.4s ease;
 }
 
 .role-card.selected .card-inner {
@@ -1227,8 +1325,12 @@ onMounted(() => {
   }
 
 .role-card:hover .tech-icon {
-  filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.8));
-  transform: scale(1.1);
+  filter: 
+    drop-shadow(0 0 25px rgba(0, 255, 255, 0.8))
+    brightness(1.1)
+    contrast(1.1);
+  transform: scale(1.05);  /* 轻微放大 */
+  transition: all 0.4s ease;
 }
 
 .role-card.selected .tech-icon {
@@ -1264,8 +1366,25 @@ onMounted(() => {
 }
 
 .role-card:hover .role-name {
-  color: #00ffff;
-  text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+  color: #ffffff;
+  text-shadow: 
+    0 0 15px rgba(0, 255, 255, 0.9),
+    0 0 25px rgba(0, 150, 255, 0.6);
+  animation: textPulse 2s ease-in-out infinite alternate;
+}
+
+/* 文字脉冲动画 */
+@keyframes textPulse {
+  0% {
+    text-shadow: 
+      0 0 15px rgba(0, 255, 255, 0.9),
+      0 0 25px rgba(0, 150, 255, 0.6);
+  }
+  100% {
+    text-shadow: 
+      0 0 20px rgba(0, 255, 255, 1),
+      0 0 35px rgba(0, 150, 255, 0.8);
+  }
 }
 
 .role-card.selected .role-name {
@@ -1503,6 +1622,94 @@ onMounted(() => {
   100% { text-shadow: 0 0 35px rgba(0, 255, 255, 1), 0 0 50px rgba(0, 255, 255, 0.8); }
 }
 
+@keyframes titlePulse {
+  0% {
+    transform: translateZ(0) scale(1);
+    filter: brightness(1.2) contrast(1.1);
+  }
+  25% {
+    transform: translateZ(0) scale(1.02);
+    filter: brightness(1.3) contrast(1.15);
+  }
+  50% {
+    transform: translateZ(0) scale(1.05);
+    filter: brightness(1.4) contrast(1.2);
+  }
+  75% {
+    transform: translateZ(0) scale(1.02);
+    filter: brightness(1.3) contrast(1.15);
+  }
+  100% {
+    transform: translateZ(0) scale(1);
+    filter: brightness(1.2) contrast(1.1);
+  }
+}
+
+/* 新的动画关键帧 */
+@keyframes borderFlow {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0.5;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 1;
+  }
+  100% {
+    background-position: 200% 50%;
+    opacity: 0.5;
+  }
+}
+
+@keyframes clockTick {
+  0%, 90% {
+    transform: rotate(0deg);
+  }
+  95% {
+    transform: rotate(6deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes titleGlow {
+  0% {
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+  100% {
+    text-shadow: 0 0 30px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.3);
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes scanningMove {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
 
 
 @keyframes platformGlow {
@@ -1526,11 +1733,28 @@ onMounted(() => {
   }
 }
 
+/* 网格项淡入动画 */
+@keyframes gridItemFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.8) rotateY(-15deg);
+  }
+  60% {
+    opacity: 0.8;
+    transform: translateY(-10px) scale(1.05) rotateY(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateY(0deg);
+  }
+}
+
 /* 响应式设计 - 🔧 修改不同屏幕尺寸下的卡片和图标大小 */
 @media (max-width: 1600px) {
   .roles-grid {
-    gap: 30px;
-    max-width: 1600px;
+    grid-template-columns: repeat(5, minmax(260px, 1fr));  /* 保持5列，但减小最小宽度 */
+    gap: 45px;      /* 减少网格间距 */
+    max-width: 1650px;
   }
   
   .role-card {
@@ -1563,8 +1787,9 @@ onMounted(() => {
 
 @media (max-width: 1400px) {
   .roles-grid {
-    gap: 25px;
-    max-width: 1200px;
+    grid-template-columns: repeat(4, minmax(220px, 1fr));  /* 改为4列布局 */
+    gap: 35px;      /* 保持舒适的视觉间距 */
+    max-width: 1300px;
   }
   
   .role-card {
@@ -1592,9 +1817,9 @@ onMounted(() => {
 
 @media (max-width: 1200px) {
   .roles-grid {
-    flex-wrap: wrap;
-    gap: 20px;
-    max-width: 800px;
+    grid-template-columns: repeat(3, minmax(200px, 1fr));  /* 改为3列布局 */
+    gap: 30px;      /* 即使在较小屏幕上也保持良好间距 */
+    max-width: 900px;
   }
   
   .role-card {
@@ -1620,20 +1845,115 @@ onMounted(() => {
   }
 }
 
-@media (max-width: 768px) {
-  .top-bar {
-    padding: 15px 20px;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .system-title {
-    font-size: 20px;
-  }
-  
+/* 超小屏幕 (480px以下) - 单列布局 */
+@media (max-width: 480px) {
   .roles-grid {
-    gap: 15px;
-    max-width: 600px;
+    grid-template-columns: 1fr;  /* 单列布局，让卡片完全填充宽度 */
+    gap: 20px;
+    max-width: 300px;
+    padding: 0 20px;
+  }
+  
+  .role-card {
+    width: 100%;    /* 卡片填充整个网格单元 */
+    min-width: 250px;
+    height: 280px;
+  }
+  
+  .tech-icon {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .role-3d-icon {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modern-header {
+    height: 100px;
+    padding: 0;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 20px;
+  }
+  
+  .time-display {
+    order: 3;
+    font-size: 12px;
+  }
+  
+  .header-title {
+    order: 1;
+    margin: 0;
+  }
+  
+  .title-main {
+    gap: 4px;
+  }
+  
+  .title-highlight {
+    font-size: 18px;
+  }
+  
+  .title-normal {
+    font-size: 18px;
+  }
+  
+  .title-subtitle {
+    font-size: 10px;
+  }
+  
+  .user-section {
+    order: 2;
+    gap: 12px;
+  }
+  
+  .user-profile {
+    padding: 4px 8px;
+  }
+  
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .avatar-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .username {
+    font-size: 12px;
+  }
+  
+  .user-role {
+    font-size: 10px;
+  }
+  
+  .action-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .button-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .tech-dots {
+    display: none;
+  }
+
+  .roles-grid {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));  /* 手机端改为2列布局 */
+    gap: 25px;      /* 手机端也保持合适的间距 */
+    max-width: 650px;
   }
   
   .role-card {
@@ -1652,15 +1972,15 @@ onMounted(() => {
     /* 🎯 768px以下屏幕(手机)的图标容器尺寸 */
     width: 140px;   /* 调整图标容器宽度 */
     height: 140px;  /* 调整图标容器高度 */
-    }
+  }
     
-    .role-name {
+  .role-name {
     font-size: 16px;
-    }
+  }
     
   .platform-base {
     width: 800px;
-    }
+  }
   
   .tech-confirm-button {
     width: 160px;

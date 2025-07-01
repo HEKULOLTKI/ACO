@@ -815,7 +815,6 @@ onMounted(() => {
                     background: rgba(255, 255, 255, 0.7);
                     padding: 2px 8px;
                     border-radius: 12px;
-                    font-style: italic;
                   }
                 }
 

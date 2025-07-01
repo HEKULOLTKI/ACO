@@ -249,13 +249,26 @@ class TaskAssignmentService:
                 assignment.user_id = user.id
         
         # 创建分配
+        assignment_status = assignment.status or '进行中'
+        assignment_progress = assignment.progress or 0
+        performance_score = assignment.performance_score or 0
+        
+        # 根据进度和状态设置绩效评分
+        if assignment_progress == 100 and assignment_status == '已完成':
+            # 只有进度达到100%且状态为已完成，才能设置为100分
+            performance_score = 100
+        elif assignment_progress < 100:
+            # 进度未达到100%时，绩效评分不能超过进度值
+            if performance_score > assignment_progress:
+                performance_score = assignment_progress
+            
         db_assignment = TaskAssignment(
             task_id=assignment.task_id,
             user_id=assignment.user_id,
             username=assignment.username,
-            status=assignment.status or '进行中',
-            progress=assignment.progress or 0,
-            performance_score=assignment.performance_score or 0,
+            status=assignment_status,
+            progress=assignment_progress,
+            performance_score=performance_score,
             comments=assignment.comments
         )
         
@@ -286,17 +299,28 @@ class TaskAssignmentService:
         for key, value in assignment.model_dump(exclude_unset=True).items():
             setattr(db_assignment, key, value)
             
-        # 如果任务完成，更新任务状态
-        if assignment.status == '已完成':
-            task = db.query(Task).filter(Task.id == db_assignment.task_id).first()
-            if task:
-                # 检查是否所有分配都已完成
-                all_assignments = db.query(TaskAssignment).filter(
-                    TaskAssignment.task_id == db_assignment.task_id
-                ).all()
-                
-                if all(a.status == '已完成' for a in all_assignments):
-                    task.status = '已完成'
+        # 根据进度和状态设置绩效评分
+        if assignment.progress is not None or assignment.status is not None:
+            # 如果进度达到100%，且状态为已完成，则设置为100分
+            if db_assignment.progress == 100 and db_assignment.status == '已完成':
+                db_assignment.performance_score = 100
+            # 如果进度未达到100%，绩效评分不能超过进度值
+            elif db_assignment.progress < 100:
+                # 绩效评分最多等于进度值
+                if db_assignment.performance_score > db_assignment.progress:
+                    db_assignment.performance_score = db_assignment.progress
+            
+            # 如果任务完成，更新任务状态
+            if db_assignment.status == '已完成':
+                task = db.query(Task).filter(Task.id == db_assignment.task_id).first()
+                if task:
+                    # 检查是否所有分配都已完成
+                    all_assignments = db.query(TaskAssignment).filter(
+                        TaskAssignment.task_id == db_assignment.task_id
+                    ).all()
+                    
+                    if all(a.status == '已完成' for a in all_assignments):
+                        task.status = '已完成'
                     
         db.commit()
         db.refresh(db_assignment)
