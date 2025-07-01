@@ -293,7 +293,7 @@ const handleSettings = () => {
 
   .system-title {
     color: white;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 600;
     margin: 0;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -389,7 +389,7 @@ const handleSettings = () => {
       }
       
       .action-label {
-        font-size: 11px;
+        font-size: 13px;
         font-weight: 500;
         color: rgba(255, 255, 255, 0.7);
         white-space: nowrap;
@@ -447,7 +447,7 @@ const handleSettings = () => {
     }
 
     .username {
-      font-size: 14px;
+      font-size: 16px;
       color: white;
       font-weight: 500;
     }
@@ -537,7 +537,7 @@ const handleSettings = () => {
     &.nav-child {
       margin: 2px 0;
       padding: 12px 24px 12px 64px;
-      font-size: 13px;
+      font-size: 15px;
       
       &:hover {
         transform: translateX(2px);
@@ -580,7 +580,7 @@ const handleSettings = () => {
     }
     
     .nav-text {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 500;
     }
   }
@@ -618,7 +618,7 @@ const handleSettings = () => {
       padding: 10px 14px;
       
       .action-label {
-        font-size: 12px;
+        font-size: 14px;
         margin-top: 3px;
       }
       
@@ -680,7 +680,7 @@ const handleSettings = () => {
   }
   
   .header-left .system-title {
-    font-size: 16px;
+    font-size: 18px;
   }
   
   .header-center {
@@ -725,7 +725,7 @@ const handleSettings = () => {
     }
     
     .system-title {
-      font-size: 14px;
+      font-size: 16px;
     }
   }
   

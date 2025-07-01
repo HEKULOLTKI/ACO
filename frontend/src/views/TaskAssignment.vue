@@ -21,8 +21,8 @@
                   placeholder="选择角色任务"
                   clearable
                   @change="handleRoleChange"
-                  style="width: 180px"
-                  size="small"
+                  style="width: 220px"
+                  size="default"
                 >
                   <el-option label="全部任务" value="" />
                   <el-option label="网络规划设计师" value="网络规划设计师" />
@@ -181,6 +181,18 @@
               </div>
             </div>
 
+            <!-- 箭头分隔符 -->
+            <div class="arrow-separator">
+              <div class="arrow-line"></div>
+              <div class="arrow-icon" 
+                   :class="{ 'clickable': checkedAvailableUsers.length > 0 }"
+                   @click="handleArrowClick"
+                   :title="checkedAvailableUsers.length > 0 ? `添加选中的 ${checkedAvailableUsers.length} 个角色` : '请先选择要添加的角色'">
+                <el-icon><ArrowDown /></el-icon>
+              </div>
+              <div class="arrow-line"></div>
+            </div>
+
             <!-- 已选执行角色（下方） -->
             <div class="selected-users-section">
               <div class="section-header">
@@ -241,7 +253,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Check, ArrowRight, ArrowLeft, Document, InfoFilled, Close } from '@element-plus/icons-vue'
+import { Check, ArrowRight, ArrowLeft, ArrowDown, Document, InfoFilled, Close } from '@element-plus/icons-vue'
 import { getTasks, createTaskAssignment } from '@/api/task'
 import { getUserList } from '@/api/user'
 import type { Task } from '@/types/task'
@@ -385,6 +397,13 @@ const addSelectedUsers = () => {
     }
   })
   checkedAvailableUsers.value = []
+}
+
+// 处理箭头点击事件
+const handleArrowClick = () => {
+  if (checkedAvailableUsers.value.length > 0) {
+    addSelectedUsers()
+  }
 }
 
 const removeSelectedUsers = () => {
@@ -841,6 +860,53 @@ onMounted(() => {
                 color: #999;
                 padding: 30px 15px;
                 font-size: 13px;
+              }
+            }
+          }
+
+          .arrow-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+            position: relative;
+            
+            .arrow-line {
+              flex: 1;
+              height: 2px;
+              background: linear-gradient(90deg, #e6f3ff 0%, #b3d9ff 50%, #e6f3ff 100%);
+              border-radius: 1px;
+            }
+            
+            .arrow-icon {
+              margin: 0 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 36px;
+              height: 36px;
+              background: linear-gradient(135deg, #66b3ff 0%, #4da6ff 100%);
+              border-radius: 50%;
+              box-shadow: 0 4px 12px rgba(102, 179, 255, 0.3);
+              transition: all 0.3s ease;
+              
+              .el-icon {
+                color: white;
+                font-size: 18px;
+                font-weight: bold;
+              }
+              
+              &:hover {
+                transform: translateY(2px);
+                box-shadow: 0 6px 16px rgba(102, 179, 255, 0.4);
+              }
+              
+              &.clickable {
+                cursor: pointer;
+                
+                &:hover {
+                  transform: translateY(2px) scale(1.05);
+                }
               }
             }
           }
