@@ -43,8 +43,8 @@
               <el-option label="完成阶段" value="完成阶段" />
             </el-select>
           </el-form-item>
-          <el-form-item label="绑定角色">
-            <el-select v-model="searchForm.role_binding" placeholder="选择绑定角色" clearable>
+                  <el-form-item label="执行角色">
+          <el-select v-model="searchForm.role_binding" placeholder="选择执行角色" clearable>
               <el-option label="网络规划设计师" value="网络规划设计师" />
               <el-option label="系统架构设计师" value="系统架构设计师" />
               <el-option label="系统规划与管理师" value="系统规划与管理师" />
@@ -68,7 +68,7 @@
                   <el-table-column prop="type" label="任务类型" width="120" />
           <el-table-column prop="phase" label="阶段" width="100" />
           <el-table-column prop="description" label="任务描述" show-overflow-tooltip min-width="150" />
-          <el-table-column prop="role_binding" label="绑定角色" width="120" />
+          <el-table-column prop="role_binding" label="执行角色" width="120" />
         <el-table-column prop="create_time" label="创建时间" width="180" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="scope">
@@ -139,10 +139,10 @@
             placeholder="请输入任务描述" 
           />
         </el-form-item>
-        <el-form-item label="绑定角色" prop="role_binding">
-          <el-select 
-            v-model="taskForm.role_binding" 
-            placeholder="请选择绑定角色"
+                  <el-form-item label="执行角色" prop="role_binding">
+            <el-select
+              v-model="taskForm.role_binding"
+              placeholder="请选择执行角色"
             style="width: 100%"
             clearable
           >
@@ -594,7 +594,7 @@ const downloadTemplate = async () => {
   try {
     // 创建CSV内容，包含标题行和示例数据
     const csvData = [
-      ['任务名称', '任务类型', '阶段', '任务描述', '绑定角色'],
+                ['任务名称', '任务类型', '阶段', '任务描述', '执行角色'],
       ['网络架构设计', '网络搭建任务', '计划阶段', '设计企业网络拓扑结构和配置方案', '网络规划设计师'],
       ['服务器环境搭建', '系统构建任务', '执行阶段', '搭建生产环境服务器和应用系统', '系统架构设计师'],
       ['监控系统配置', '运维监管任务', '配置阶段', '配置系统监控和告警机制', '系统规划与管理师'],

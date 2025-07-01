@@ -13,7 +13,7 @@ class Task(Base):
     phase = Column(String(50), comment="任务阶段")
     description = Column(Text, comment="任务描述")
     status = Column(String(50), default='未分配', comment="任务状态")
-    role_binding = Column(String(100), comment="绑定角色")
+    role_binding = Column(String(100), comment="执行角色")
     create_time = Column(TIMESTAMP, server_default=func.now(), comment="创建时间")
     update_time = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now(), comment="更新时间")
     

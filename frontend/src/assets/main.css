@@ -214,6 +214,94 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
+/* 表格字体颜色和大小覆盖 - 确保所有列表字体为深黑色且大小适中 */
+.el-table {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+.el-table th,
+.el-table td {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+.el-table .el-table__header th {
+  color: #000000 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.el-table .el-table__body td {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+.el-table--border .el-table__cell {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+/* 表格内的其他元素也确保为深黑色和合适字体大小 */
+.el-table .cell {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+.el-table .el-table__expanded-cell {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+/* 下拉列表和选择器字体颜色和大小 */
+.el-select-dropdown .el-select-dropdown__item {
+  color: #000000 !important;
+  font-size: 15px !important;
+}
+
+.el-popper .el-select-dropdown__item {
+  color: #000000 !important;
+  font-size: 15px !important;
+}
+
+/* 菜单列表字体颜色和大小 */
+.el-menu-item {
+  color: #000000 !important;
+  font-size: 15px !important;
+}
+
+.el-submenu__title {
+  color: #000000 !important;
+  font-size: 15px !important;
+}
+
+/* 其他列表元素 */
+.el-list-item {
+  color: #000000 !important;
+  font-size: 15px !important;
+}
+
+.el-tree-node__content {
+  color: #000000 !important;
+  font-size: 15px !important;
+}
+
+/* 确保悬停状态也保持深黑色和字体大小 */
+.el-table--enable-row-hover .el-table__body tr:hover > td {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
+.el-table__body tr.current-row > td {
+  color: #000000 !important;
+  font-size: 16px !important;
+}
+
 /* 加载动画 */
 @keyframes fadeIn {
   from {

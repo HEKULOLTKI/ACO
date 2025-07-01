@@ -8,3 +8,34 @@ __pycache__
 *.pywz
 *.pyzw
 *.pyzwz
+
+# 上传文件目录
+uploads/
+!uploads/.gitkeep
+
+# 临时文件
+*.tmp
+*.temp
+
+# 日志文件
+*.log
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 环境配置文件
+.env
+.env.local
+.env.production
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db

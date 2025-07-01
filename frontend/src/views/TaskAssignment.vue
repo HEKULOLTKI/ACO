@@ -50,7 +50,7 @@
               <el-table-column prop="name" label="任务名称" min-width="140" show-overflow-tooltip />
               <el-table-column prop="type" label="类型" width="100" />
               <el-table-column prop="phase" label="阶段" width="100" />
-              <el-table-column prop="role_binding" label="绑定角色" width="120" show-overflow-tooltip />
+              <el-table-column prop="role_binding" label="执行角色" width="120" show-overflow-tooltip />
             </el-table>
             
             <!-- 批量操作提示 -->
@@ -94,7 +94,7 @@
                   <div class="detail-value">{{ currentTask.phase || '未指定' }}</div>
                 </div>
                 <div class="detail-item">
-                  <label class="detail-label">绑定角色</label>
+                  <label class="detail-label">执行角色</label>
                   <div class="detail-value">{{ currentTask.role_binding || '未指定' }}</div>
                 </div>
                 <div class="detail-item">

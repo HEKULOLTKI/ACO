@@ -24,7 +24,7 @@ async def get_tasks(
     limit: int = Query(100, ge=1, le=1000, description="限制返回的记录数"),
     status: Optional[str] = Query(None, description="任务状态过滤"),
     task_type: Optional[str] = Query(None, description="任务类型过滤"),
-    role_binding: Optional[str] = Query(None, description="绑定角色过滤"),
+    role_binding: Optional[str] = Query(None, description="执行角色过滤"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -43,7 +43,7 @@ async def get_tasks(
 async def get_tasks_count(
     status: Optional[str] = Query(None, description="任务状态过滤"),
     task_type: Optional[str] = Query(None, description="任务类型过滤"),
-    role_binding: Optional[str] = Query(None, description="绑定角色过滤"),
+    role_binding: Optional[str] = Query(None, description="执行角色过滤"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -249,7 +249,7 @@ async def bulk_import_tasks(
             
             # 验证必要的列
             required_columns = ['任务名称', '任务类型', '阶段', '任务描述']
-            optional_columns = ['执行角色', '绑定角色']
+            optional_columns = ['执行角色']
             missing_columns = [col for col in required_columns if col not in headers]
             if missing_columns:
                 raise HTTPException(
@@ -283,8 +283,8 @@ async def bulk_import_tasks(
                         task_assignee = row[column_indexes['执行角色']].strip()
                     
                     task_role_binding = ""
-                    if '绑定角色' in column_indexes and len(row) > column_indexes['绑定角色'] and row[column_indexes['绑定角色']]:
-                        task_role_binding = row[column_indexes['绑定角色']].strip()
+                    if '执行角色' in column_indexes and len(row) > column_indexes['执行角色'] and row[column_indexes['执行角色']]:
+                        task_role_binding = row[column_indexes['执行角色']].strip()
                     
                     # 验证必填字段
                     if not task_name:
@@ -358,7 +358,7 @@ async def bulk_import_tasks(
             
             # 验证必要的列
             required_columns = ['任务名称', '任务类型', '阶段', '任务描述']
-            optional_columns = ['执行角色', '绑定角色']
+            optional_columns = ['执行角色']
             missing_columns = [col for col in required_columns if col not in headers]
             if missing_columns:
                 raise HTTPException(
@@ -392,8 +392,8 @@ async def bulk_import_tasks(
                         task_assignee = str(row[column_indexes['执行角色']]).strip()
                     
                     task_role_binding = ""
-                    if '绑定角色' in column_indexes and row[column_indexes['绑定角色']]:
-                        task_role_binding = str(row[column_indexes['绑定角色']]).strip()
+                    if '执行角色' in column_indexes and row[column_indexes['执行角色']]:
+                        task_role_binding = str(row[column_indexes['执行角色']]).strip()
                     
                     # 验证必填字段
                     if not task_name:
