@@ -31,7 +31,7 @@ def create_tables():
     """创建所有表"""
     try:
         # 导入所有模型以确保它们被注册到Base.metadata
-        from app.models import user, device, system, task, desktop, knowledge
+        from app.models import user, device, system, task, desktop, knowledge, project
         
         # 创建所有表
         Base.metadata.create_all(bind=engine)

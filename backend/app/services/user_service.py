@@ -22,6 +22,11 @@ class UserService:
         return db.query(User).filter(User.username == username).first()
     
     @staticmethod
+    def get_users_by_username_search(db: Session, username: str) -> List[User]:
+        """根据用户名模糊搜索用户"""
+        return db.query(User).filter(User.username.ilike(f"%{username}%")).all()
+    
+    @staticmethod
     def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
         """获取用户列表"""
         return db.query(User).offset(skip).limit(limit).all()

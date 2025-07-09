@@ -64,7 +64,9 @@
     <div class="roles-section">
       <!-- 选中指示器 - 动态指向选中角色 -->
       <div class="selection-indicator">
-        <div class="selection-dot" :style="getArrowPosition()"></div>
+        <div class="selection-arrow" :style="getArrowPosition()">
+          <img :src="arrowIcon" alt="选择指示器" class="arrow-icon">
+        </div>
       </div>
       
       <div class="roles-grid">
@@ -77,6 +79,8 @@
             'available': true
               }"
               @click="selectRole(role.value)"
+              @mouseenter="handleMouseEnter(role.value)"
+              @mouseleave="handleMouseLeave"
             >
           <div class="card-glow" :class="{ 'active': selectedRole === role.value }"></div>
           <div class="card-inner">
@@ -122,6 +126,7 @@ import {
 import { useAuthStore } from '@/store/modules/auth'
 import { USER_ROLE_OPTIONS } from '@/types/user'
 import AccessDeniedDialog from '@/components/AccessDeniedDialog.vue'
+import arrowIcon from '@/assets/role/箭头.png'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -129,6 +134,18 @@ const authStore = useAuthStore()
 // 选中的角色
 const selectedRole = ref<string>('')
 const loading = ref(false)
+
+// 悬浮的角色
+const hoveredRole = ref<string>('')
+
+// 鼠标悬浮事件处理
+const handleMouseEnter = (roleValue: string) => {
+  hoveredRole.value = roleValue
+}
+
+const handleMouseLeave = () => {
+  hoveredRole.value = ''
+}
 
 // 访问权限弹窗
 const showAccessDenied = ref(false)
@@ -229,10 +246,14 @@ const selectRole = (role: string) => {
 
 // 获取指示点位置 - 适应网格布局
 const getArrowPosition = () => {
-  if (!selectedRole.value) return { display: 'none' }
+  if (!hoveredRole.value) {
+    return { display: 'none' }
+  }
   
-  const selectedIndex = roleOptions.findIndex(role => role.value === selectedRole.value)
-  if (selectedIndex === -1) return { display: 'none' }
+  const hoveredIndex = roleOptions.findIndex(role => role.value === hoveredRole.value)
+  if (hoveredIndex === -1) {
+    return { display: 'none' }
+  }
   
   // 根据屏幕宽度获取当前网格列数
   const getGridColumns = () => {
@@ -248,22 +269,24 @@ const getArrowPosition = () => {
   const cardWidth = 280
   const gap = 55
   
-  // 计算选中卡片在当前行中的列位置（0开始）
-  const columnIndex = selectedIndex % columns
+  // 计算悬浮卡片在当前行中的列位置（0开始）
+  const columnIndex = hoveredIndex % columns
   
   // 计算网格容器的总宽度
   const gridWidth = columns * cardWidth + (columns - 1) * gap
   
-  // 计算选中卡片在当前行中的位置
+  // 计算悬浮卡片在当前行中的位置
   const firstCardCenter = -(gridWidth / 2) + (cardWidth / 2)
-  const selectedCardCenter = firstCardCenter + columnIndex * (cardWidth + gap)
+  const hoveredCardCenter = firstCardCenter + columnIndex * (cardWidth + gap)
   
-  return {
-    left: `calc(50% + ${selectedCardCenter}px)`,
+  const position = {
+    left: `calc(50% + ${hoveredCardCenter}px)`,
     transform: 'translateX(-50%)',
-    transition: 'left 0.5s cubic-bezier(0.23, 1, 0.32, 1)',
+    transition: 'left 0.3s cubic-bezier(0.23, 1, 0.32, 1)',
     display: 'block'
   }
+  
+  return position
 }
 
 // 发送用户数据JSON
@@ -551,15 +574,16 @@ onMounted(() => {
   }
   
 
+
   
   // 监听窗口大小变化，重新计算指示器位置
   window.addEventListener('resize', () => {
     // 触发响应式更新，让指示器位置重新计算
-    if (selectedRole.value) {
-      const currentRole = selectedRole.value
-      selectedRole.value = ''
+    if (hoveredRole.value) {
+      const currentRole = hoveredRole.value
+      hoveredRole.value = ''
       setTimeout(() => {
-        selectedRole.value = currentRole
+        hoveredRole.value = currentRole
       }, 50)
     }
   })
@@ -996,25 +1020,59 @@ onMounted(() => {
 
 .selection-indicator {
   position: absolute;
-  top: -30px;
+  top: -50px;
   left: 0;
   width: 100%;
-  height: 20px;
+  height: 40px;
   pointer-events: none;
+  z-index: 100;
 }
 
-.selection-dot {
+.selection-arrow {
   position: absolute;
   top: 0;
-  width: 10px;
-  height: 10px;
-  background: #00ffff;
-  border-radius: 50%;
-  box-shadow: 
-    0 0 10px rgba(0, 255, 255, 0.8),
-    0 0 20px rgba(0, 255, 255, 0.6),
-    0 0 30px rgba(0, 255, 255, 0.4);
+  width: 40px;
+  height: 40px;
   display: none;
+  animation: arrowFloat 2s ease-in-out infinite alternate;
+  z-index: 101;
+}
+
+.arrow-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: 
+    brightness(1.5) 
+    saturate(1.2) 
+    drop-shadow(0 0 8px rgba(0, 255, 255, 0.8))
+    drop-shadow(0 0 15px rgba(0, 255, 255, 0.6))
+    drop-shadow(0 0 25px rgba(0, 255, 255, 0.4))
+    drop-shadow(0 0 35px rgba(255, 255, 255, 0.3));
+  transition: all 0.3s ease;
+  animation: arrowGlow 3s ease-in-out infinite alternate;
+}
+
+/* 箭头发光动画 */
+@keyframes arrowGlow {
+  0% {
+    filter: 
+      brightness(1.5) 
+      saturate(1.2) 
+      drop-shadow(0 0 8px rgba(0, 255, 255, 0.8))
+      drop-shadow(0 0 15px rgba(0, 255, 255, 0.6))
+      drop-shadow(0 0 25px rgba(0, 255, 255, 0.4))
+      drop-shadow(0 0 35px rgba(255, 255, 255, 0.3));
+  }
+  100% {
+    filter: 
+      brightness(2) 
+      saturate(1.5) 
+      drop-shadow(0 0 12px rgba(0, 255, 255, 1))
+      drop-shadow(0 0 20px rgba(0, 255, 255, 0.8))
+      drop-shadow(0 0 30px rgba(0, 255, 255, 0.6))
+      drop-shadow(0 0 40px rgba(255, 255, 255, 0.5));
+  }
 }
 
 .roles-grid {
@@ -1134,6 +1192,16 @@ onMounted(() => {
   }
   100% {
     background-position: 200% 200%;
+  }
+}
+
+/* 箭头浮动动画 */
+@keyframes arrowFloat {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  100% {
+    transform: translateY(-8px) scale(1.1);
   }
 }
 

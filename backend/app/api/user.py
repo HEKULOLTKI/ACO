@@ -19,11 +19,14 @@ async def get_users(
     limit: int = Query(100, ge=1, le=1000, description="返回的记录数"),
     role: str = Query(None, description="筛选角色"),
     user_type: str = Query(None, description="筛选用户类型"),
+    username: str = Query(None, description="筛选用户名"),
     db: Session = Depends(get_db),
     current_user = Depends(get_admin_user)
 ) -> List[UserResponse]:
     """获取用户列表（管理员权限）"""
-    if role:
+    if username:
+        users = UserService.get_users_by_username_search(db, username)
+    elif role:
         users = UserService.get_users_by_role(db, role)
     elif user_type:
         users = UserService.get_users_by_type(db, user_type)

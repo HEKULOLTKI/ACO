@@ -81,3 +81,17 @@ export interface BulkImportResult {
   }>
   message: string
 } 
+
+// 项目定义
+export interface Project {
+  id: number
+  name: string
+  description: string
+  status: string
+  icon: any
+  created_at?: string
+  updated_at?: string
+  manager_id?: number
+  manager?: UserProfile
+  planning?: string
+} 

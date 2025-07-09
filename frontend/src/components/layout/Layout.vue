@@ -30,6 +30,15 @@
       <div class="header-right">
         <div class="header-actions">
           
+          <!-- 项目选择按钮 - 仅管理员可见 -->
+          <el-tooltip content="切换项目" placement="bottom" effect="dark" v-if="userStore.isAdmin">
+            <div class="action-btn project-btn" @click="switchProject">
+              <img src="@/assets/icon/组 3592.png" alt="项目" class="action-icon" />
+              <span class="action-label">项目</span>
+              <span v-if="currentProject" class="project-badge">{{ currentProject.name }}</span>
+            </div>
+          </el-tooltip>
+          
           <el-tooltip content="通知消息" placement="bottom" effect="dark">
             <div class="action-btn notification-btn" @click="handleNotification">
               <img src="@/assets/icon/组 3000.png" alt="通知" class="action-icon" />
@@ -171,11 +180,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/modules/auth'
+import type { Project } from '@/types/user'
 
 const router = useRouter()
 const route = useRoute()
@@ -184,6 +194,24 @@ const userStore = useAuthStore()
 // 响应式数据
 const searchValue = ref('')
 const notificationCount = ref(5)
+const currentProject = ref<Project | null>(null)
+
+// 获取当前选中的项目
+onMounted(() => {
+  const savedProject = localStorage.getItem('selectedProject')
+  if (savedProject) {
+    try {
+      currentProject.value = JSON.parse(savedProject)
+    } catch (error) {
+      console.error('解析已保存的项目失败:', error)
+    }
+  }
+})
+
+// 切换项目
+const switchProject = () => {
+  router.push('/project-selection')
+}
 
 const goToProfile = () => {
   router.push('/profile')
@@ -423,6 +451,32 @@ const handleSettings = () => {
           font-weight: 600;
           line-height: 1;
           box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+        }
+      }
+      
+      &.project-btn {
+        min-width: 80px;
+        
+        .project-badge {
+          position: absolute;
+          bottom: -12px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(52, 152, 219, 0.9);
+          color: white;
+          font-size: 10px;
+          padding: 2px 6px;
+          border-radius: 10px;
+          max-width: 100px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          line-height: 1;
+          box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
         }
       }
     }

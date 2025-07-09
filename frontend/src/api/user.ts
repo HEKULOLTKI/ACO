@@ -21,6 +21,11 @@ export const getUsers = (params?: {
   return request.get<User[]>('/users', { params })
 }
 
+// 搜索用户
+export const searchUsers = (username: string) => {
+  return request.get<User[]>('/users', { params: { username } })
+}
+
 // 创建用户
 export const createUser = (data: UserForm) => {
   return request.post<User>('/users', data)

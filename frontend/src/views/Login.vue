@@ -306,9 +306,8 @@ const handleLogin = async () => {
     
     // 根据用户类型进行不同的跳转
     if (user.type === '管理员') {
-      // 管理员直接进入主页面
-      const redirect = route.query.redirect as string
-      router.push(redirect || '/dashboard')
+      // 管理员进入项目选择页面
+      router.push('/project-selection')
     } else if (user.type === '操作员') {
       // 操作员进入角色选择界面
       router.push('/role-selection')
@@ -330,7 +329,7 @@ const handleLogin = async () => {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
 }
 
 // 背景层
@@ -422,7 +421,7 @@ const handleLogin = async () => {
   position: relative;
   z-index: 10;
   display: grid;
-  grid-template-columns: 1fr 450px;
+  grid-template-columns: 1fr 650px;  // 进一步从550px增加到650px
   width: 100%;
   height: 100vh;
   min-height: 700px;
@@ -486,14 +485,14 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 60px;  // 从50px增加到60px
 }
 
 .login-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 580px;  // 从480px增加到580px
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  border-radius: 30px;  // 从24px增加到30px
   overflow: hidden;
   animation: cardSlideIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
@@ -510,12 +509,12 @@ const handleLogin = async () => {
 }
 
 .card-header {
-  padding: 28px 28px 24px;
+  padding: 40px 40px 34px;  // 从34px 34px 28px增加
   text-align: center;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   
   .login-title {
-    font-size: 24px;
+    font-size: 40px;  // 从34px增加到40px
     font-weight: 700;
     color: #1a202c;
     margin: 0;
@@ -527,27 +526,27 @@ const handleLogin = async () => {
 }
 
 .card-body {
-  padding: 24px 28px 20px;
+  padding: 36px 40px 30px;  // 从30px 34px 26px增加
 }
 
 // 表单样式
 .login-form {
   .form-section {
-    margin-bottom: 20px;
+    margin-bottom: 30px;  // 从20px增加到30px
     
     .section-title {
-      font-size: 15px;
+      font-size: 22px;  // 从18px增加到22px
       font-weight: 600;
       color: #374151;
-      margin: 0 0 14px 0;
+      margin: 0 0 22px 0;  // 从0 0 20px 0增加到0 0 22px 0
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;  // 从8px增加到10px
       
       &::before {
         content: '';
-        width: 3px;
-        height: 14px;
+        width: 5px;  // 从4px增加到5px
+        height: 22px;  // 从18px增加到22px
         background: linear-gradient(135deg, #667eea, #764ba2);
         border-radius: 2px;
       }
@@ -561,25 +560,25 @@ const handleLogin = async () => {
     // 背景滑块
     .selector-background {
       position: relative;
-      height: 56px;
+      height: 80px;  // 从66px增加到80px
       background: rgba(248, 250, 252, 0.8);
-      border-radius: 14px;
+      border-radius: 20px;  // 从16px增加到20px
       border: 2px solid #e5e7eb;
-      margin-bottom: 16px;
+      margin-bottom: 24px;  // 从20px增加到24px
       overflow: hidden;
       
       .active-indicator {
         position: absolute;
-        top: 4px;
-        left: 4px;
-        width: calc(50% - 4px);
-        height: calc(100% - 8px);
+        top: 5px;  // 从4px增加到5px
+        left: 5px;  // 从4px增加到5px
+        width: calc(50% - 5px);  // 从calc(50% - 4px)修改
+        height: calc(100% - 10px);  // 从calc(100% - 8px)修改
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px;
+        border-radius: 16px;  // 从12px增加到16px
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 
-          0 4px 12px rgba(102, 126, 234, 0.3),
-          0 2px 4px rgba(102, 126, 234, 0.2);
+          0 5px 15px rgba(102, 126, 234, 0.3),  // 调整阴影
+          0 3px 5px rgba(102, 126, 234, 0.2);
         
         &::before {
           content: '';
@@ -604,7 +603,7 @@ const handleLogin = async () => {
       top: 0;
       left: 0;
       width: 100%;
-      height: 56px;
+      height: 80px;  // 从66px增加到80px
       display: flex;
       z-index: 2;
       
@@ -636,13 +635,13 @@ const handleLogin = async () => {
               h4 {
                 color: white !important;
                 font-weight: 700 !important;
-                font-size: 13px !important;
+                font-size: 18px !important;  // 从16px增加到18px
                 line-height: 1.3 !important;
               }
               
               p {
                 color: rgba(255, 255, 255, 0.9) !important;
-                font-size: 11px !important;
+                font-size: 16px !important;  // 从14px增加到16px
                 line-height: 1.3 !important;
               }
             }
@@ -664,14 +663,14 @@ const handleLogin = async () => {
               h4 {
                 color: white !important;
                 font-weight: 700 !important;
-                font-size: 13px !important;
+                font-size: 18px !important;  // 从16px增加到18px
                 line-height: 1.3 !important;
                 margin: 0 !important;
               }
               
               p {
                 color: rgba(255, 255, 255, 0.9) !important;
-                font-size: 11px !important;
+                font-size: 16px !important;  // 从14px增加到16px
                 line-height: 1.3 !important;
                 margin: 0 !important;
               }
@@ -682,8 +681,8 @@ const handleLogin = async () => {
         .tab-content {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 12px 14px;
+          gap: 12px;  // 从8px增加到12px
+          padding: 16px 18px;  // 从12px 14px增加
           width: 100%;
           height: 100%;
           box-sizing: border-box;
@@ -691,8 +690,8 @@ const handleLogin = async () => {
           .tab-icon {
             position: relative;
             flex-shrink: 0;
-            width: 24px;
-            height: 24px;
+            width: 32px;  // 从24px增加到32px
+            height: 32px;  // 从24px增加到32px
             
             .icon-wrapper {
               display: flex;
@@ -704,7 +703,7 @@ const handleLogin = async () => {
               height: 100%;
               
               .el-icon {
-                font-size: 24px !important;
+                font-size: 32px !important;  // 从24px增加到32px
               }
             }
             
@@ -727,7 +726,7 @@ const handleLogin = async () => {
             min-width: 0;
             
             h4 {
-              font-size: 13px !important;
+              font-size: 18px !important;  // 从16px增加到18px
               font-weight: 600 !important;
               color: #6b7280 !important;
               margin: 0 !important;
@@ -736,7 +735,7 @@ const handleLogin = async () => {
             }
             
             p {
-              font-size: 11px !important;
+              font-size: 16px !important;  // 从14px增加到16px
               color: #9ca3af !important;
               margin: 0 !important;
               line-height: 1.3 !important;
@@ -749,13 +748,13 @@ const handleLogin = async () => {
     
     // 角色详情卡片
     .role-details {
-      margin-top: 14px;
+      margin-top: 20px;  // 从14px增加到20px
       
       .role-detail-card {
-        padding: 16px;
+        padding: 20px;  // 从16px增加到20px
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.02), rgba(118, 75, 162, 0.02));
         border: 1px solid rgba(102, 126, 234, 0.1);
-        border-radius: 12px;
+        border-radius: 16px;  // 从12px增加到16px
         position: relative;
         overflow: hidden;
         
@@ -772,23 +771,27 @@ const handleLogin = async () => {
         .detail-header {
           display: flex;
           align-items: center;
-          gap: 10px;
-          margin-bottom: 10px;
+          gap: 12px;  // 从10px增加到12px
+          margin-bottom: 14px;  // 从10px增加到14px
           
           .detail-icon {
-            width: 32px;
-            height: 32px;
+            width: 38px;  // 从32px增加到38px
+            height: 38px;  // 从32px增加到38px
             display: flex;
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 8px;
+            border-radius: 10px;  // 从8px增加到10px
             color: white;
-            box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);  // 调整阴影
+            
+            .el-icon {
+              font-size: 24px !important;  // 从20px增加到24px
+            }
           }
           
           h5 {
-            font-size: 15px;
+            font-size: 22px;  // 从18px增加到22px
             font-weight: 600;
             color: #374151;
             margin: 0;
@@ -796,10 +799,10 @@ const handleLogin = async () => {
         }
         
         .detail-description {
-          font-size: 13px;
+          font-size: 18px;  // 从16px增加到18px
           color: #6b7280;
           line-height: 1.5;
-          margin: 0 0 14px 0;
+          margin: 0 0 20px 0;  // 从0 0 18px 0增加到0 0 20px 0
           word-wrap: break-word;
           overflow-wrap: break-word;
         }
@@ -807,17 +810,17 @@ const handleLogin = async () => {
         .permissions-list {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 8px;
+          gap: 10px;  // 从8px增加到10px
           
           .permission-item {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
+            gap: 8px;  // 从6px增加到8px
+            padding: 8px 12px;  // 从6px 10px增加
             background: rgba(16, 185, 129, 0.05);
             border: 1px solid rgba(16, 185, 129, 0.1);
-            border-radius: 6px;
-            font-size: 12px;
+            border-radius: 8px;  // 从6px增加到8px
+            font-size: 16px;  // 从14px增加到16px
             color: #374151;
             transition: all 0.3s ease;
             
@@ -828,6 +831,7 @@ const handleLogin = async () => {
             
             .el-icon {
               color: #10b981;
+              font-size: 16px;  // 增加图标大小
             }
           }
         }
@@ -865,7 +869,7 @@ const handleLogin = async () => {
   // 输入框样式
   .input-wrapper {
     position: relative;
-    margin-bottom: 16px;
+    margin-bottom: 24px;  // 从20px增加到24px
     width: 100%;
     
     .custom-input {
@@ -873,13 +877,13 @@ const handleLogin = async () => {
       
       :deep(.el-input__wrapper) {
         width: 100%;
-        border-radius: 12px;
+        border-radius: 16px;  // 从14px增加到16px
         border: 2px solid #e5e7eb;
         box-shadow: none;
         background: rgba(248, 250, 252, 0.8);
         backdrop-filter: blur(10px);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        padding: 2px 14px;
+        padding: 6px 18px;  // 从4px 16px增加
         
         &:hover {
           border-color: #c7d2fe;
@@ -896,19 +900,20 @@ const handleLogin = async () => {
       
       :deep(.el-input__inner) {
         width: 100%;
-        height: 42px;
-        font-size: 14px;
+        height: 58px;  // 从48px增加到58px
+        font-size: 20px;  // 从18px增加到20px
         color: #374151;
         font-weight: 500;
         
         &::placeholder {
           color: #9ca3af;
+          font-size: 20px;  // 增加placeholder字体大小
         }
       }
       
       .input-icon {
         color: #667eea;
-        font-size: 16px;
+        font-size: 24px;  // 从22px增加到24px
       }
     }
   }
@@ -925,19 +930,19 @@ const handleLogin = async () => {
   
   // 登录按钮
   .login-button-section {
-    margin-top: 20px;
+    margin-top: 30px;  // 从24px增加到30px
     margin-bottom: 0;
   }
   
   .login-button {
     width: 100%;
-    height: 44px;
-    font-size: 15px;
+    height: 62px;  // 从60px增加到62px
+    font-size: 22px;  // 从20px增加到22px
     font-weight: 600;
-    border-radius: 12px;
+    border-radius: 16px;  // 从14px增加到16px
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);  // 调整阴影
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -967,7 +972,8 @@ const handleLogin = async () => {
     }
     
     .el-icon {
-      margin-right: 8px;
+      margin-right: 12px;  // 从10px增加到12px
+      font-size: 22px;  // 从20px增加到22px
     }
   }
 }
@@ -975,7 +981,7 @@ const handleLogin = async () => {
 // 响应式设计
 @media (max-width: 1200px) {
   .main-content {
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr 540px;  // 从1fr 460px增加
   }
   
   .welcome-section {
@@ -987,17 +993,17 @@ const handleLogin = async () => {
   }
   
   .login-card {
-    max-width: 360px;
+    max-width: 520px;  // 从440px增加
   }
 }
 
 @media (max-width: 1024px) {
   .main-content {
-    grid-template-columns: 1fr 350px;
+    grid-template-columns: 1fr 500px;  // 从1fr 420px增加
   }
   
   .login-card {
-    max-width: 340px;
+    max-width: 480px;  // 从400px增加
   }
   
   .card-header {

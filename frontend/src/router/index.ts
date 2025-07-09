@@ -23,6 +23,16 @@ const routes = [
     }
   },
   {
+    path: '/project-selection',
+    name: 'ProjectSelection',
+    component: () => import('@/views/ProjectSelection.vue'),
+    meta: { 
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: '项目选择'
+    }
+  },
+  {
     path: '/',
     redirect: '/login'
   },
@@ -222,13 +232,20 @@ router.beforeEach(async (to, from, next) => {
   // 允许所有已认证用户访问角色选择页面
 
   // 特殊处理：操作员登录后需要先选择角色
-  if (to.name !== 'RoleSelection' && to.meta.requiresAuth) {
+  if (to.name !== 'RoleSelection' && to.name !== 'ProjectSelection' && to.meta.requiresAuth) {
     const user = authStore.user
     const selectedRole = localStorage.getItem('selectedRole')
+    const selectedProject = localStorage.getItem('selectedProject')
     
     if (user && user.type === '操作员' && !selectedRole) {
       // 操作员未选择角色，重定向到角色选择页面
       next('/role-selection')
+      return
+    }
+    
+    if (user && user.type === '管理员' && !selectedProject && to.name !== 'Login') {
+      // 管理员未选择项目，重定向到项目选择页面
+      next('/project-selection')
       return
     }
   }
